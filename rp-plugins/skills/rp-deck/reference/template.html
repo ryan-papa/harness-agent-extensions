@@ -40,6 +40,11 @@ body{font-family:var(--font);background:var(--grey-100);color:var(--grey-900);
 .kicker{font-size:16px;font-weight:600;color:var(--grey-500);margin-top:auto}
 .slide-note{font-size:15px;color:var(--grey-400);margin-top:20px}
 
+/* ── 용어 각주 (슬라이드 하단, 낯선 용어 1~3개, 한 줄, 약어는 풀텍스트 병기) ── */
+.gloss{position:absolute;left:88px;right:88px;bottom:52px;padding-top:12px;
+  border-top:1px solid var(--grey-100);font-size:13px;line-height:1.5;color:var(--grey-500);word-break:keep-all}
+.gloss b{color:var(--grey-700);font-weight:600}
+
 /* ── 표지 ── */
 .cover .headline{font-size:64px}
 .cover .meta{display:flex;gap:12px;margin-top:40px;font-size:16px;color:var(--grey-600)}
@@ -228,6 +233,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
       <div class="node hi">토스 스타일 HTML</div><span class="arrow">→</span>
       <div class="node">분류 저장·인덱스</div>
     </div>
+    <div class="gloss"><b>컨텍스트</b>: 방금 진행한 작업·대화 내용 · <b>인덱스</b>: 만든 장표를 한눈에 모아 보는 목록 페이지</div>
   </section>
 
   <!-- 10. 마무리 한 줄 강조 -->
