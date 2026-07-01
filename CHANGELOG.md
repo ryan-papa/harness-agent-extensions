@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.1] - 2026-07-02
+
+### Changed
+- 대상 레포는 `.rp-deck.json` 또는 이번 실행 명시 입력으로만 지정 — git remote·대화 맥락·추측 등 **어떤 유추·자동 지정도 금지**. 명시 입력 없으면 로컬 모드
+- SKILL.md에서 예시 레포명(document-center) 제거
+
 ## [0.6.0] - 2026-07-02
 
 ### Changed
