@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.0] - 2026-07-02
+
+### Added
+- 생성 전 기존 문서 확인 → **보강 vs 신규** 자동 판단
+  - 대상 루트(레포 캐시/로컬)의 title·category·summary 종합 + 내용으로 같은 주제 여부 판단
+  - 같은 주제 명확 → 기존 파일 그 자리 편집(슬라이드 추가·수정, date만 갱신, 파일명·경로 유지)
+  - 새 주제 명확 → 신규 생성 / 애매 → 사용자에게 보강·신규 확인
+  - SKILL.md §보강 vs 신규 + 워크플로우 4단계 추가 + 절대 규칙 반영
+
 `rp-plugins` 플러그인 버전 이력. [SemVer](https://semver.org/lang/ko/) 준수.
 스킬 변경 시 `rp-plugins/.claude-plugin/plugin.json`의 `version`과 이 파일을 함께 갱신한다.
 
