@@ -3,6 +3,15 @@
 `rp-plugins` 플러그인 버전 이력. [SemVer](https://semver.org/lang/ko/) 준수.
 스킬 변경 시 `rp-plugins/.claude-plugin/plugin.json`의 `version`과 이 파일을 함께 갱신한다.
 
+## [0.3.0] - 2026-07-02
+
+### Added
+- 심화 컴포넌트를 `template.html` SSOT에 정식 등록 (데모 슬라이드 포함)
+  - `단계(steps)` — 동작·시나리오 분해, `key`(파랑)·`bad`(빨강)·`ok`(초록) 변형
+  - `코드블록(code)`·인라인 `mono`, `공식강조(formula)`
+- `design-rules.md` §9 "깊이와 분량" — 이해에 필요한 내용은 줄이지 않기, 복잡도에 맞게 슬라이드 확장, 메커니즘은 단계로, 과소·과대 지양 (린트 항목 추가)
+- SKILL.md 구조 설계 단계에 컴포넌트·깊이 지침 반영
+
 ## [0.2.0] - 2026-07-02
 
 ### Added

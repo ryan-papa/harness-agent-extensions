@@ -8,7 +8,7 @@ Ryan-papa 하네스용 Claude Code 플러그인·스킬 모음.
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.2.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.3.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|

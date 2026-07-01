@@ -19,6 +19,7 @@
   --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:20px; --pill:9999px;
   --shadow-2:0 2px 8px rgba(0,0,0,.08); --shadow-3:0 4px 12px rgba(0,0,0,.12);
   --font:"Pretendard",-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Roboto",sans-serif;
+  --mono:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%}
@@ -116,6 +117,33 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 /* ── 인용/한 줄 강조 ── */
 .quote .headline{font-size:52px;line-height:1.35}
 .quote .headline b{color:var(--toss-blue)}
+
+/* ── 인라인 코드 조각 ── */
+.mono{font-family:var(--mono);font-size:15px;background:var(--grey-100);padding:2px 7px;border-radius:6px;color:var(--grey-800)}
+
+/* ── 코드 블록 (키워드 파랑, 문자열 초록, 설명 캡션) ── */
+.code{margin-top:30px;display:flex;flex-direction:column;gap:14px}
+.code .line{background:var(--grey-900);color:#E5E8EB;font-family:var(--mono);font-size:17px;line-height:1.7;
+  padding:18px 24px;border-radius:var(--r-md);white-space:pre-wrap}
+.code .line b{color:#82AAFF;font-weight:600}
+.code .line i{color:#C3E88D;font-style:normal}
+.code .cmt{color:var(--grey-500);font-size:15px;margin-top:6px;padding-left:4px}
+
+/* ── 단계 (동작·시나리오; 강조=key 파랑, 위험=bad 빨강, 해소=ok 초록) ── */
+.steps{margin-top:32px;display:flex;flex-direction:column;gap:16px}
+.step{display:flex;align-items:flex-start;gap:18px;font-size:19px;line-height:1.45;color:var(--grey-800);word-break:keep-all}
+.step .n{width:34px;height:34px;flex:none;border-radius:var(--pill);background:var(--grey-900);color:#fff;
+  font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.step.key .n{background:var(--toss-blue)}
+.step.bad .n{background:var(--negative)}
+.step.ok .n{background:var(--positive)}
+.step b{color:var(--grey-900);font-weight:700}
+
+/* ── 공식·수식 강조 (한 화면 하나) ── */
+.formula{margin-top:44px;background:var(--grey-900);border-radius:var(--r-lg);padding:40px;text-align:center}
+.formula .f{font-size:34px;font-weight:700;color:#fff;line-height:1.4}
+.formula .f b{color:#82AAFF}
+.formula .f s{color:var(--negative);text-decoration:none}
 
 /* ── HUD: 진행바·페이지·힌트 ── */
 #progress{position:fixed;top:0;left:0;height:4px;background:var(--toss-blue);width:0;z-index:20;transition:width .25s ease}
@@ -236,6 +264,36 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
     <div class="gloss"><b>컨텍스트</b>: 방금 진행한 작업·대화 내용 · <b>인덱스</b>: 만든 장표를 한눈에 모아 보는 목록 페이지</div>
   </section>
 
+  <!-- 단계·시나리오 컴포넌트 -->
+  <section class="slide">
+    <div class="eyebrow">단계 · 시나리오</div>
+    <h2 class="headline">동작·실패 과정은 단계로 보여줘요</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1</span><div>기본 단계는 검정 번호로 표시해요.</div></div>
+      <div class="step key"><span class="n">2</span><div><b>핵심 단계</b>는 파랑으로 강조해요.</div></div>
+      <div class="step bad"><span class="n">3</span><div>문제·위험 단계는 빨강으로 표시해요 💥</div></div>
+      <div class="step ok"><span class="n">4</span><div>해소·성공 단계는 초록으로 표시해요 ✅</div></div>
+    </div>
+  </section>
+
+  <!-- 코드 블록 컴포넌트 -->
+  <section class="slide">
+    <div class="eyebrow">코드</div>
+    <h2 class="headline">명령·스니펫은 코드 블록으로 보여줘요</h2>
+    <div class="code">
+      <div><div class="line"><b>SET</b> key <i>&lt;value&gt;</i> <b>NX</b> <b>PX</b> 30000</div>
+      <div class="cmt">키워드는 파랑, 문자열·값은 초록, 설명은 회색 캡션으로 정리해요.</div></div>
+    </div>
+    <p class="subcopy">짧은 조각은 <span class="mono">inline mono</span>로 문장 안에 넣어요.</p>
+  </section>
+
+  <!-- 공식 강조 컴포넌트 -->
+  <section class="slide center">
+    <div class="eyebrow">공식 강조</div>
+    <h2 class="headline">핵심 수식은 크게 하나만 보여줘요</h2>
+    <div class="formula"><div class="f">유효시간 = TTL <s>−</s> 경과 <s>−</s> 오차</div></div>
+  </section>
+
   <!-- 10. 마무리 한 줄 강조 -->
   <section class="slide center quote">
     <h2 class="headline">이제 <b>rp-deck</b>로<br>읽히는 장표를 만들어 보세요</h2>
@@ -243,7 +301,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   </section>
 
 </div>
-<div id="counter">1 / 10</div>
+<div id="counter">1 / 13</div>
 <div id="hint">← → · Space · F 전체화면</div>
 
 <script>
