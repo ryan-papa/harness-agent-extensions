@@ -8,7 +8,7 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.5.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.6.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
