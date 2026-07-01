@@ -1,0 +1,8 @@
+# 생성된 장표 산출물 — 별도 레포로 관리
+docs/decks/
+
+# 도구 부산물
+.gstack/
+
+# OS
+.DS_Store
