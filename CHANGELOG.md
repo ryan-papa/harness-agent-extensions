@@ -3,6 +3,21 @@
 `rp-plugins` 플러그인 버전 이력. [SemVer](https://semver.org/lang/ko/) 준수.
 스킬 변경 시 `rp-plugins/.claude-plugin/plugin.json`의 `version`과 이 파일을 함께 갱신한다.
 
+## [0.4.0] - 2026-07-02
+
+### Added
+- 타깃 GitHub 레포 적재 — 생성 문서를 환경별로 지정한 레포에 push
+  - 프로젝트 루트 `.rp-deck.json`(`{"repo":"owner/name"}`)에 대상 저장
+  - 미등록 환경이면 대상 레포를 한 번 물어봄. 등록하면 캐시(`~/.rp-deck/repos/<owner>__<name>`) clone/pull → 4레벨 배치 → index 갱신 → commit·push
+  - **미등록·거부 시 로컬 모드**: `<cwd>/docs/decks`에 생성·인덱스만, push 없음 (생성은 항상 수행). 묻지 않고 임의 레포 push 금지
+  - SKILL.md 워크플로우(타깃 레포 확인 단계 추가)·절대 규칙 반영
+
+### Changed
+- 문서·매니페스트 노출 텍스트에서 조직명 표기 제거 (GitHub 링크 경로는 유지)
+
+### Fixed
+- SKILL.md 자가 린트 참조 섹션 번호 정정 (§8 → §10)
+
 ## [0.3.0] - 2026-07-02
 
 ### Added

@@ -1,13 +1,13 @@
 {
   "name": "harness-agent-extensions",
   "owner": {
-    "name": "ryan-papa"
+    "name": "Rapa-Space"
   },
   "plugins": [
     {
       "name": "rp-plugins",
       "source": "./rp-plugins",
-      "description": "Ryan-papa 하네스 확장 플러그인 모음 (rp-* 스킬)"
+      "description": "하네스 확장 플러그인 모음 (rp-* 스킬)"
     }
   ]
 }
