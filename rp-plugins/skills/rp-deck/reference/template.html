@@ -145,6 +145,11 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .formula .f b{color:#82AAFF}
 .formula .f s{color:var(--negative);text-decoration:none}
 
+/* ── 용어집 (덱 끝 정리 슬라이드; 2열 리스트) ── */
+.terms{margin-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:14px 40px}
+.terms .term{font-size:16px;line-height:1.5;color:var(--grey-700);word-break:keep-all}
+.terms .term b{color:var(--grey-900);font-weight:700}
+
 /* ── HUD: 진행바·페이지·힌트 ── */
 #progress{position:fixed;top:0;left:0;height:4px;background:var(--toss-blue);width:0;z-index:20;transition:width .25s ease}
 #counter{position:fixed;bottom:20px;right:24px;font-size:14px;font-weight:600;color:var(--grey-500);z-index:20;
@@ -294,6 +299,18 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
     <div class="formula"><div class="f">유효시간 = TTL <s>−</s> 경과 <s>−</s> 오차</div></div>
   </section>
 
+  <!-- 용어집 컴포넌트 데모 -->
+  <section class="slide">
+    <div class="eyebrow">용어 사전</div>
+    <h2 class="headline">용어가 많으면 끝에 모아 정리해요</h2>
+    <div class="terms">
+      <div class="term"><b>SSOT</b>(Single Source of Truth): 하나의 원본만 두는 원칙</div>
+      <div class="term"><b>컴포넌트</b>: 재사용하는 슬라이드 구성 조각</div>
+      <div class="term"><b>글랜스 테스트</b>: 3초 안에 요점이 잡히는지 보는 점검</div>
+      <div class="term"><b>data-ink</b>: 데이터를 나타내는 데 쓰인 잉크(요소)</div>
+    </div>
+  </section>
+
   <!-- 10. 마무리 한 줄 강조 -->
   <section class="slide center quote">
     <h2 class="headline">이제 <b>rp-deck</b>로<br>읽히는 장표를 만들어 보세요</h2>
@@ -301,7 +318,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   </section>
 
 </div>
-<div id="counter">1 / 13</div>
+<div id="counter">1 / 14</div>
 <div id="hint">← → · Space · F 전체화면</div>
 
 <script>
