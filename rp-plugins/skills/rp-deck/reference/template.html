@@ -107,6 +107,27 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .bar-fill.muted{background:var(--grey-300)}
 .bar-row .val{font-size:18px;font-weight:700;color:var(--grey-900);font-variant-numeric:tabular-nums}
 
+/* ── 선 차트 (추세; 순수 SVG, 그리드 없음, 값 직접 라벨) ── */
+.linechart{margin-top:40px}
+.linechart svg{width:100%;height:auto;display:block}
+.linechart text{font-family:var(--font)}
+.linechart .lc-line{fill:none;stroke:var(--toss-blue);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.linechart .lc-dot{fill:var(--toss-blue)}
+.linechart .lc-val{font-size:16px;font-weight:700;fill:var(--grey-900)}
+.linechart .lc-x{font-size:14px;font-weight:600;fill:var(--grey-600)}
+
+/* ── 도넛 (구성비 ≤5; conic-gradient, 가운데 라벨 + 직접 범례) ── */
+.donut-row{display:flex;align-items:center;gap:56px;margin-top:44px}
+.donut{width:260px;height:260px;border-radius:50%;flex:none;position:relative}
+.donut::after{content:"";position:absolute;inset:64px;border-radius:50%;background:var(--white)}
+.donut .center{position:absolute;inset:0;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.donut .center .v{font-size:44px;font-weight:700;color:var(--grey-900);line-height:1}
+.donut .center .l{font-size:15px;font-weight:600;color:var(--grey-600);margin-top:6px}
+.legend{display:flex;flex-direction:column;gap:18px}
+.legend .li{display:flex;align-items:center;gap:14px;font-size:19px;color:var(--grey-800)}
+.legend .li .dot{width:16px;height:16px;border-radius:4px;flex:none}
+.legend .li .pct{margin-left:auto;font-weight:700;color:var(--grey-900);font-variant-numeric:tabular-nums}
+
 /* ── 플로우 다이어그램 ── */
 .flow{display:flex;align-items:center;justify-content:center;gap:16px;margin-top:60px;flex-wrap:wrap}
 .node{background:var(--grey-50);border:1px solid var(--grey-200);border-radius:var(--r-md);
@@ -256,6 +277,47 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
     <p class="slide-note">* 예시 데이터 — 실제 값이 있을 때만 차트를 써요.</p>
   </section>
 
+  <!-- 선 차트 (추세; 값 직접 라벨, 옆에 해석 텍스트 병기) -->
+  <section class="slide">
+    <div class="eyebrow">추세</div>
+    <h2 class="headline">주가 지날수록 끝까지 본 비율이 올라가요</h2>
+    <div class="linechart">
+      <svg viewBox="0 0 820 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="주차별 완독률 추세">
+        <polyline class="lc-line" points="60,207 240,168 420,135 600,102 780,84"/>
+        <circle class="lc-dot" cx="60" cy="207" r="6"/><text class="lc-val" x="60" y="190" text-anchor="middle">51%</text>
+        <circle class="lc-dot" cx="240" cy="168" r="6"/><text class="lc-val" x="240" y="151" text-anchor="middle">64%</text>
+        <circle class="lc-dot" cx="420" cy="135" r="6"/><text class="lc-val" x="420" y="118" text-anchor="middle">75%</text>
+        <circle class="lc-dot" cx="600" cy="102" r="6"/><text class="lc-val" x="600" y="85" text-anchor="middle">86%</text>
+        <circle class="lc-dot" cx="780" cy="84" r="6"/><text class="lc-val" x="780" y="67" text-anchor="middle">92%</text>
+        <text class="lc-x" x="60" y="270" text-anchor="middle">1주</text>
+        <text class="lc-x" x="240" y="270" text-anchor="middle">2주</text>
+        <text class="lc-x" x="420" y="270" text-anchor="middle">3주</text>
+        <text class="lc-x" x="600" y="270" text-anchor="middle">4주</text>
+        <text class="lc-x" x="780" y="270" text-anchor="middle">5주</text>
+      </svg>
+    </div>
+    <p class="subcopy">추세는 선으로 보여줘요. 값은 점 위에 직접 붙여 범례 없이 읽혀요.</p>
+    <p class="slide-note">* 예시 데이터 — 실제 값이 있을 때만 차트를 써요.</p>
+  </section>
+
+  <!-- 도넛 (구성비 ≤5; 직접 범례 + 값 병기) -->
+  <section class="slide">
+    <div class="eyebrow">구성비</div>
+    <h2 class="headline">생성 시간의 절반 이상을 구조 설계에 써요</h2>
+    <div class="donut-row">
+      <div class="donut" style="background:conic-gradient(var(--toss-blue) 0 62%, var(--grey-400) 62% 82%, var(--grey-200) 82% 100%)">
+        <div class="center"><span class="v">62%</span><span class="l">구조 설계</span></div>
+      </div>
+      <div class="legend">
+        <div class="li"><span class="dot" style="background:var(--toss-blue)"></span>구조 설계<span class="pct">62%</span></div>
+        <div class="li"><span class="dot" style="background:var(--grey-400)"></span>HTML 생성<span class="pct">20%</span></div>
+        <div class="li"><span class="dot" style="background:var(--grey-200)"></span>분류·저장<span class="pct">18%</span></div>
+      </div>
+    </div>
+    <p class="subcopy">구성비는 도넛으로, 조각은 5개 이하로 나눠요. 값은 범례에 직접 붙여요.</p>
+    <p class="slide-note">* 예시 데이터.</p>
+  </section>
+
   <!-- 9. 플로우 다이어그램 -->
   <section class="slide center">
     <div class="eyebrow">동작 방식</div>
@@ -318,7 +380,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   </section>
 
 </div>
-<div id="counter">1 / 14</div>
+<div id="counter">1 / 16</div>
 <div id="hint">← → · Space · F 전체화면</div>
 
 <script>
