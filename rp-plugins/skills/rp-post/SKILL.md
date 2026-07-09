@@ -15,7 +15,7 @@ description: 소재·경험·작업 결과를 목적에 맞는 글 초안으로 
 | [`reference/archetypes.md`](reference/archetypes.md) | 아키타입 — 바이럴 A1~A6 + 사내 지식공유 K1~K3 |
 | [`reference/checklist.md`](reference/checklist.md) | 초안 검증 체크리스트 — 바이럴용·사내 공유용 각 7항목 |
 | [`reference/platforms.md`](reference/platforms.md) | 플랫폼 프로파일 — 쓰레드(실측)·블로그·네이버카페·company(사내)·기타 |
-| [`reference/review.md`](reference/review.md) | 독립 에이전트 병렬 리뷰 프로토콜 (Claude ∥ Codex, 2라운드, 작성자 셀프리뷰 금지) |
+| [`reference/review.md`](reference/review.md) | 독립 에이전트 병렬 리뷰 프로토콜 (Claude ∥ Codex 각 1회, 작성자 셀프리뷰 금지) |
 
 ## 입력 모드 (인자로 자동 판단)
 
@@ -46,11 +46,10 @@ description: 소재·경험·작업 결과를 목적에 맞는 글 초안으로 
    - ⛔ 없는 사실·숫자를 지어내지 않는다. 소재에 없으면 `[숫자 채우기]` 플레이스홀더로 표시하고 사용자에게 확인.
 6. **체크리스트 검증** — 변형마다 `checklist.md`의 **플랫폼에 맞는 체크리스트**(바이럴용/사내 공유용) 7항목 표(✓/△/✗ + 한줄 코멘트)를 첨부. 최저 항목이 ✗면 그 변형을 수정 후 재검증.
 7. **선택·다듬기** — 사용자가 변형을 고르면 피드백 반영해 다듬는다 (반복 가능).
-8. **독립 리뷰 루프** — 다듬은 최종본을 [`review.md`](reference/review.md) 프로토콜로 검수. ⛔ 작성자 셀프리뷰 금지.
-   - R1: Claude 서브에이전트 ∥ Codex `codex exec` **병렬** 리뷰 (같은 턴 동시 실행) → 취합 → high·med 반영, low 로그
-   - R2: 1회 더 병렬 리뷰 → 반영 후 종료 (상한 2라운드, 두 리뷰어 모두 지적 0건이면 조기 종료)
+8. **독립 리뷰** — 다듬은 최종본을 [`review.md`](reference/review.md) 프로토콜로 검수. ⛔ 작성자 셀프리뷰 금지.
+   - Claude 서브에이전트 ∥ Codex `codex exec` **병렬** 리뷰 각 1회 (같은 턴 동시 실행) → 취합 → high·med 반영, low 로그 → 종료 (수정 후 재리뷰 없음)
    - Codex 불가 시 1줄 기록 후 Claude 단독 진행 (비차단)
-9. **마무리 출력** — 완성본을 복사해서 바로 붙일 수 있는 형태로 출력 + 리뷰 요약(라운드별 지적/반영 건수) 1~2줄 첨부.
+9. **마무리 출력** — 완성본을 복사해서 바로 붙일 수 있는 형태로 출력 + 리뷰 요약(지적/반영 건수) 1~2줄 첨부.
 10. **(선택) 저장** — 사용자가 원하면 `<cwd>/docs/posts/YYYYMMDD_<슬러그>.md`로 저장 (초안 전 변형 + 최종본 + 체크리스트·리뷰 결과 포함).
 
 ## 출력 형식
