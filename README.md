@@ -8,7 +8,7 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.10.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.11.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
@@ -57,7 +57,8 @@ harness-agent-extensions/
             ├── SKILL.md              # 스킬 정의
             └── reference/
                 ├── patterns.md       # 실측 통계 SSOT + 데이터 갱신 절차
-                ├── archetypes.md     # 아키타입 6종 공식
-                ├── checklist.md      # 초안 검증 7항목
-                └── platforms.md      # 플랫폼 프로파일·변환 규칙
+                ├── archetypes.md     # 아키타입 공식 (바이럴 A1~A6 · 사내 K1~K3)
+                ├── checklist.md      # 초안 검증 (바이럴용·사내용 각 7항목)
+                ├── platforms.md      # 플랫폼 프로파일·변환 규칙
+                └── review.md         # 독립 에이전트 병렬 리뷰 프로토콜
 ```
