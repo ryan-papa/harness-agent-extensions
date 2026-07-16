@@ -14,7 +14,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 | [`reference/template.html`](reference/template.html) | 디자인·컴포넌트·네비게이션 SSOT. CSS·클래스를 그대로 재사용하고 내용만 채운다 |
 | [`reference/design-rules.md`](reference/design-rules.md) | 구조·전달력·데이터시각화·토스 톤·자가 린트 규칙 |
 | [`reference/review.md`](reference/review.md) | 독립 에이전트 병렬 리뷰 프로토콜 (2라운드, 작성자 셀프리뷰 금지) |
-| [`scripts/update_index.py`](scripts/update_index.py) | 덱 트리 스캔 → index.html 생성 (stdlib only) |
+| [`scripts/update_index.py`](scripts/update_index.py) | 덱 트리 스캔 → 게시판 index.html 생성: 좌측 디렉토리 트리(전체+뎁스 중첩) + 우측 리스트, 트리·검색 필터는 임베드 JSON 기반 클라이언트 렌더 (stdlib only) |
 
 ## 입력 모드 (인자로 자동 판단)
 
