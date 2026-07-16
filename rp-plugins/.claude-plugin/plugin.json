@@ -1,6 +1,6 @@
 {
   "name": "rp-plugins",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "하네스 확장 플러그인. 작업 산출물을 토스 스타일 HTML 장표로 변환하는 rp-deck, 실측 바이럴 패턴 기반 글 초안 생성 rp-post, 특정 레포를 심층 발굴 분석하는 rp-codebase-recap 등 rp-* 스킬 모음.",
   "author": {
     "name": "Rapa-Space"
