@@ -173,7 +173,14 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 
 /* ── HUD: 진행바·페이지·힌트 ── */
 #progress{position:fixed;top:0;left:0;height:4px;background:var(--toss-blue);width:0;z-index:20;transition:width .25s ease}
-#counter{position:fixed;bottom:20px;right:24px;font-size:14px;font-weight:600;color:var(--grey-500);z-index:20;
+/* 우하단: 홈 버튼(설정 시) + 페이지 카운터 */
+#hud-br{position:fixed;bottom:20px;right:24px;z-index:20;display:flex;align-items:center;gap:10px}
+#home{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--grey-700);
+  background:rgba(255,255,255,.8);padding:6px 12px 6px 10px;border-radius:var(--pill);
+  text-decoration:none;transition:background .15s ease,color .15s ease}
+#home:hover{background:var(--white);color:var(--toss-blue)}
+#home svg{width:16px;height:16px;display:block}
+#counter{font-size:14px;font-weight:600;color:var(--grey-500);
   background:rgba(255,255,255,.8);padding:6px 12px;border-radius:var(--pill)}
 #hint{position:fixed;bottom:20px;left:24px;font-size:13px;color:var(--grey-400);z-index:20}
 
@@ -182,7 +189,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   body{overflow:visible;background:#fff}
   #stage{position:static;display:block}
   .slide{display:flex!important;position:relative;page-break-after:always;width:100%;height:100vh}
-  #progress,#counter,#hint{display:none}
+  #progress,#hud-br,#hint{display:none}
 }
 </style>
 </head>
@@ -380,7 +387,13 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   </section>
 
 </div>
-<div id="counter">1 / 16</div>
+<div id="hud-br">
+  <!-- rp-deck: .rp-deck.json의 home 값으로 href 치환. home 미설정이면 이 <a id="home">를 삭제 -->
+  <a id="home" href="https://document-center.example.com/" title="게시판 홈으로">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈
+  </a>
+  <div id="counter">1 / 16</div>
+</div>
 <div id="hint">← → · Space · F 전체화면</div>
 
 <script>
@@ -417,7 +430,7 @@ addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
 addEventListener('touchend',e=>{ if(x0===null)return; const dx=e.changedTouches[0].clientX-x0;
   if(Math.abs(dx)>50)(dx<0?next:prev)(); x0=null;});
 // 클릭 좌우 영역
-addEventListener('click',e=>{ if(e.clientX>innerWidth*0.7)next(); else if(e.clientX<innerWidth*0.3)prev(); });
+addEventListener('click',e=>{ if(e.target.closest('#home'))return; if(e.clientX>innerWidth*0.7)next(); else if(e.clientX<innerWidth*0.3)prev(); });
 addEventListener('resize',fit);
 addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1));if(n)go(n-1);});
 if(location.hash){const n=parseInt(location.hash.slice(1));if(n)i=n-1;}
