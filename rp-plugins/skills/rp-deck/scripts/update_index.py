@@ -224,6 +224,16 @@ li.open>.node .tw{transform:rotate(90deg)}
 .date{text-align:right;font-size:13px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
 .empty{padding:64px 20px;text-align:center;color:var(--muted);font-size:15px}
 
+/* auto-hide 스크롤바: idle 투명 → 스크롤/호버 시에만 노출 */
+.tree,.list{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.tree:hover,.list:hover,.tree.scrolling,.list.scrolling{scrollbar-color:var(--border-strong) transparent}
+.tree::-webkit-scrollbar,.list::-webkit-scrollbar{width:8px;height:8px}
+.tree::-webkit-scrollbar-track,.list::-webkit-scrollbar-track{background:transparent}
+.tree::-webkit-scrollbar-thumb,.list::-webkit-scrollbar-thumb{
+  background:transparent;border-radius:999px;transition:background .35s}
+.tree.scrolling::-webkit-scrollbar-thumb,.list.scrolling::-webkit-scrollbar-thumb,
+.tree:hover::-webkit-scrollbar-thumb,.list:hover::-webkit-scrollbar-thumb{background:var(--border-strong)}
+
 /* mobile dir toggle */
 .dirtoggle{display:none}
 @media (max-width:860px){
@@ -417,6 +427,19 @@ document.getElementById("dirToggle").addEventListener("click",()=>{
 });
 if(window.matchMedia("(max-width:860px)").matches)
   document.getElementById("side").classList.add("collapsed");
+
+/* 스크롤바 auto-hide: 스크롤하는 동안만 노출 */
+function autoHideScroll(el){
+  if(!el) return;
+  let t;
+  el.addEventListener("scroll",()=>{
+    el.classList.add("scrolling");
+    clearTimeout(t);
+    t=setTimeout(()=>el.classList.remove("scrolling"),700);
+  },{passive:true});
+}
+autoHideScroll(document.getElementById("tree"));
+autoHideScroll(document.getElementById("list"));
 
 renderTree();
 renderList();
