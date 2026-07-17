@@ -132,19 +132,21 @@ svg{display:block}
 .search input::placeholder{color:var(--muted)}
 .search .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted)}
 
-/* ── Shell ── */
-.shell{max-width:1240px;margin:0 auto;padding:32px 24px 80px;
-  display:grid;grid-template-columns:264px minmax(0,1fr);gap:28px;align-items:start}
+/* ── Shell (좌우 2-pane, 각 pane 내부 스크롤·페이지 고정) ── */
+.shell{max-width:1240px;margin:0 auto;padding:28px 24px;
+  display:grid;grid-template-columns:264px minmax(0,1fr);grid-template-rows:minmax(0,1fr);
+  gap:28px;height:100vh;height:100dvh}
+main{display:flex;flex-direction:column;min-height:0}
 
 /* ── Sidebar / directory ── */
-.side{position:sticky;top:28px}
+.side{display:flex;flex-direction:column;min-height:0}
 .side-h{display:flex;align-items:center;justify-content:space-between;
   padding:0 8px 10px;font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--muted)}
 .side-h button{font:inherit;font-size:12px;font-weight:700;color:var(--text-3);background:none;
   border:none;cursor:pointer;padding:2px 6px;border-radius:6px}
 .side-h button:hover{background:var(--surface-2);color:var(--accent)}
 .tree{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  padding:8px;box-shadow:var(--shadow)}
+  padding:8px;box-shadow:var(--shadow);flex:1 1 auto;min-height:0;overflow-y:auto}
 .tree ul{list-style:none}
 .tree .kids{position:relative;margin-left:15px;padding-left:11px;
   border-left:1.5px solid var(--border);display:none}
@@ -194,10 +196,11 @@ li.open>.node .tw{transform:rotate(90deg)}
 .board-h .n b{color:var(--accent);font-variant-numeric:tabular-nums}
 
 .list{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-  overflow:hidden;box-shadow:var(--shadow)}
+  box-shadow:var(--shadow);flex:1 1 auto;min-height:0;overflow-y:auto;overflow-x:hidden}
 .list-head{display:grid;grid-template-columns:1fr 96px;gap:14px;padding:12px 22px;
   border-bottom:1px solid var(--border);background:var(--surface-2);
-  font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em}
+  font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.02em;
+  position:sticky;top:0;z-index:1}
 .list-head .r{text-align:right}
 .row{display:grid;grid-template-columns:1fr 96px;gap:14px;align-items:center;
   padding:17px 22px;border-bottom:1px solid var(--border);transition:background .12s}
@@ -221,19 +224,37 @@ li.open>.node .tw{transform:rotate(90deg)}
 .date{text-align:right;font-size:13px;color:var(--muted);font-weight:600;font-variant-numeric:tabular-nums}
 .empty{padding:64px 20px;text-align:center;color:var(--muted);font-size:15px}
 
+/* auto-hide 스크롤바: idle 투명 → 스크롤/호버 시에만 노출 */
+.tree,.list{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.tree:hover,.list:hover,.tree.scrolling,.list.scrolling{scrollbar-color:var(--border-strong) transparent}
+.tree::-webkit-scrollbar,.list::-webkit-scrollbar{width:8px;height:8px}
+.tree::-webkit-scrollbar-track,.list::-webkit-scrollbar-track{background:transparent}
+.tree::-webkit-scrollbar-thumb,.list::-webkit-scrollbar-thumb{
+  background:transparent;border-radius:999px;transition:background .35s}
+.tree.scrolling::-webkit-scrollbar-thumb,.list.scrolling::-webkit-scrollbar-thumb,
+.tree:hover::-webkit-scrollbar-thumb,.list:hover::-webkit-scrollbar-thumb{background:var(--border-strong)}
+
 /* mobile dir toggle */
 .dirtoggle{display:none}
 @media (max-width:860px){
-  .shell{grid-template-columns:1fr;gap:16px}
-  .side{position:static}
+  /* 모바일: 2-pane 해제 → 페이지 전체 스크롤, 좌우 대칭 패딩 */
+  .shell{grid-template-columns:1fr;grid-template-rows:auto;gap:16px;height:auto;padding:16px 16px 48px}
+  .side{display:block;min-height:0}
+  main{display:block;min-height:0}
+  .tree{flex:none;min-height:0;overflow:visible}
+  .list{flex:none;min-height:0;overflow:hidden}
+  .list-head{display:none}
   .dirtoggle{display:flex;align-items:center;gap:8px;width:100%;justify-content:space-between;
+    margin-bottom:12px;
     font:inherit;font-weight:700;font-size:14px;color:var(--text);background:var(--surface);
     border:1px solid var(--border);border-radius:12px;padding:12px 16px;cursor:pointer;box-shadow:var(--shadow)}
   .side.collapsed .side-h,.side.collapsed .tree{display:none}
-  .board-h{align-items:stretch}
+  .board-h{align-items:stretch;padding:0 0 14px}
   .search{flex:1 1 100%;order:2}
-  .list-head,.row{grid-template-columns:1fr 76px}
-  .list-head,.row{padding-left:16px;padding-right:16px}
+  /* 행: 제목·설명·날짜 세로 스택, 좌우 동일 패딩 */
+  .row{grid-template-columns:1fr;gap:0;padding:16px}
+  .date{text-align:left;margin-top:10px}
+  .sum{-webkit-line-clamp:2}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style></head><body>
@@ -406,6 +427,19 @@ document.getElementById("dirToggle").addEventListener("click",()=>{
 });
 if(window.matchMedia("(max-width:860px)").matches)
   document.getElementById("side").classList.add("collapsed");
+
+/* 스크롤바 auto-hide: 스크롤하는 동안만 노출 */
+function autoHideScroll(el){
+  if(!el) return;
+  let t;
+  el.addEventListener("scroll",()=>{
+    el.classList.add("scrolling");
+    clearTimeout(t);
+    t=setTimeout(()=>el.classList.remove("scrolling"),700);
+  },{passive:true});
+}
+autoHideScroll(document.getElementById("tree"));
+autoHideScroll(document.getElementById("list"));
 
 renderTree();
 renderList();
