@@ -13,7 +13,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 |------|------|
 | [`reference/template.html`](reference/template.html) | 디자인·컴포넌트·네비게이션 SSOT. CSS·클래스를 그대로 재사용하고 내용만 채운다 |
 | [`reference/design-rules.md`](reference/design-rules.md) | 구조·전달력·데이터시각화·토스 톤·자가 린트 규칙 |
-| [`reference/review.md`](reference/review.md) | 독립 에이전트 병렬 리뷰 프로토콜 (2라운드, 작성자 셀프리뷰 금지) |
+| [`reference/review.md`](reference/review.md) | 독립 에이전트 병렬 리뷰 프로토콜 (2라운드, 건당 10분 타임아웃, 작성자 셀프리뷰 금지) |
 | [`scripts/update_index.py`](scripts/update_index.py) | 덱 트리 스캔 → 게시판 index.html 생성: 좌측 디렉토리 트리(전체+뎁스 중첩) + 우측 리스트, 트리·검색 필터는 임베드 JSON 기반 클라이언트 렌더 (stdlib only) |
 
 ## 입력 모드 (인자로 자동 판단)
@@ -109,7 +109,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 8. **저장** — 신규: 대상 루트(레포 모드=캐시, 로컬 모드=`<cwd>/docs/decks`) 아래 `<1>/<2>/<3>/<4>/<제목>_<YYYY-MM-DD>.html`(공백→`-`, 특수문자 제거). 보강: 기존 파일 경로에 덮어쓰기.
 9. **인덱스 갱신** — `python3 <스킬경로>/scripts/update_index.py <대상 루트>` 실행.
 10. **자가 린트** — [`design-rules.md`](reference/design-rules.md) §10 체크리스트를 통과하는지 확인 후 위반 시 수정.
-11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **Claude 서브에이전트(Agent 툴) ∥ Codex(`codex exec`)**를 병렬 실행해 항목별 평가를 받는다. 취합·수정 후 각 리뷰어에 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료. ([`review.md`](reference/review.md))
+11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **Claude 서브에이전트(Agent 툴) ∥ Codex(`codex exec`)**를 병렬 실행해 항목별 평가를 받는다. **호출 1건당 타임아웃 10분**(Codex=Bash `timeout: 600000`, Claude=프롬프트에 10분 상한 명시), 초과 리뷰어는 1줄 기록 후 스킵·재시도 없음. 취합·수정 후 각 리뷰어에 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료. ([`review.md`](reference/review.md))
 12. **적재 (레포 모드만)** — 캐시에서 `git add -A` → 커밋 → `git push`. **push 성공까지 확인**하고, 실패하면 중단·보고(로컬에만 커밋 남기지 않음). 로컬 모드는 건너뛴다.
 13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** 미설정·비-topic이면 건너뛴다. (§옵시디언 지식베이스)
 14. **오픈** — 생성/보강된 HTML을 `open`으로 실행. 대상(레포/로컬)·경로·장 수·**보강/신규 여부**·**옵시디언 적재 여부**를 한 줄로 보고.
@@ -125,7 +125,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 - **타깃 레포는 명시 입력만 인정** — 대상 레포는 `.rp-deck.json` 또는 이번 실행의 사용자 명시 답, 이 둘로만 정한다. ⛔ git remote·대화 맥락·추측으로 레포를 유추·자동 지정 금지. 명시 입력이 없으면 대상을 한 번 물어보고, 답이 없으면 **로컬에만 생성(푸시 없음)** — 생성 자체는 항상 해준다.
 - **홈 버튼도 명시 설정만** — 홈 링크는 `.rp-deck.json`의 `home` 또는 이번 실행의 사용자 명시만 인정. ⛔ git remote·추측으로 유추 금지. 있으면 이 스킬이 만지는 덱(신규·보강) 우하단에 `#home` 버튼(href=home, 같은 탭)을 넣고, 없으면 홈 버튼 없이 생성(묻지 않음). (§홈 버튼)
 - **생성 전 기존 문서 확인** — 대상 루트에 같은 주제가 있으면 보강, 없으면 신규. 애매하면 물어본다. 조용히 덮어쓰지 않는다.
-- **독립 리뷰 필수** — 생성·보강 후 push 전, **작성 에이전트가 아닌 독립 에이전트**(Claude 서브에이전트 ∥ Codex `codex exec`)가 병렬로 평가한다. ⛔ 작성자 셀프리뷰 금지, 상한 2라운드. ([`review.md`](reference/review.md))
+- **독립 리뷰 필수** — 생성·보강 후 push 전, **작성 에이전트가 아닌 독립 에이전트**(Claude 서브에이전트 ∥ Codex `codex exec`)가 병렬로 평가한다. ⛔ 작성자 셀프리뷰 금지, 상한 2라운드, **호출 건당 상한 10분**(⛔ 연장·재시도 금지 — 초과 시 비차단 스킵). ([`review.md`](reference/review.md))
 - **시각 요소 병기** — 시각화를 넣어도 설명 텍스트·용어 각주를 줄이지 않는다. 시각 요소는 텍스트를 대체하지 않고 함께 둔다.
 - **작업 전 원격 최신화 필수 (레포 모드)** — 기존 문서 확인·생성 전에 캐시를 `fetch`+`reset --hard origin/<기본브랜치>`로 원격 최신에 맞춘다(stale 캐시로 판단 금지). 각 실행은 push까지 완료.
 - **레포 호스트 일반화** — `repo`는 `owner/name`(github.com)과 전체 URL(사내 GitHub Enterprise 등 다른 호스트)을 모두 허용. ⛔ github.com으로 가정하지 말고, 전체 URL이면 그 URL로 clone/fetch·링크한다.
