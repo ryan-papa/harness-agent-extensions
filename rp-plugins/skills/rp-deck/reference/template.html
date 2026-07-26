@@ -32,6 +32,8 @@ body{font-family:var(--font);background:var(--grey-100);color:var(--grey-900);
   padding:72px 88px;display:none;flex-direction:column;justify-content:center;overflow:hidden}
 .slide.active{display:flex}
 .slide.center{align-items:center;text-align:center}
+/* 내용이 넘칠 때 컴포넌트가 눌려 행이 잘리지 않게 — 넘치면 눈에 보이게 두고 장을 나눈다 */
+.slide>*{flex:none}
 
 /* ── 타이포 스케일 ── */
 .eyebrow{font-size:20px;font-weight:700;color:var(--toss-blue);margin-bottom:16px;letter-spacing:0}
@@ -41,10 +43,12 @@ body{font-family:var(--font);background:var(--grey-100);color:var(--grey-900);
 .kicker{font-size:16px;font-weight:600;color:var(--grey-500);margin-top:auto}
 .slide-note{font-size:15px;color:var(--grey-400);margin-top:20px}
 
-/* ── 용어 각주 (슬라이드 하단, 낯선 용어 1~3개, 한 줄, 약어는 풀텍스트 병기) ── */
+/* ── 용어 각주 (슬라이드 하단, 낯선 용어를 넉넉히, 약어는 풀텍스트 병기) ── */
 .gloss{position:absolute;left:88px;right:88px;bottom:52px;padding-top:12px;
   border-top:1px solid var(--grey-100);font-size:13px;line-height:1.5;color:var(--grey-500);word-break:keep-all}
 .gloss b{color:var(--grey-700);font-weight:600}
+/* 각주가 본문을 밀지 않도록, .gloss를 쓰는 슬라이드는 하단 여백을 넓힌다 (각주 최대 4줄까지 안전) */
+.slide.has-gloss{padding-bottom:160px}
 
 /* ── 표지 ── */
 .cover .headline{font-size:64px}
@@ -108,8 +112,8 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .bar-row .val{font-size:18px;font-weight:700;color:var(--grey-900);font-variant-numeric:tabular-nums}
 
 /* ── 선 차트 (추세; 순수 SVG, 그리드 없음, 값 직접 라벨) ── */
-.linechart{margin-top:40px}
-.linechart svg{width:100%;height:auto;display:block}
+.linechart{margin-top:20px}
+.linechart svg{width:100%;height:auto;max-height:340px;display:block}
 .linechart text{font-family:var(--font)}
 .linechart .lc-line{fill:none;stroke:var(--toss-blue);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
 .linechart .lc-dot{fill:var(--toss-blue)}
@@ -171,6 +175,61 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .terms .term{font-size:16px;line-height:1.5;color:var(--grey-700);word-break:keep-all}
 .terms .term b{color:var(--grey-900);font-weight:700}
 
+/* ── 스키마 카드 (테이블 구조: 키 뱃지·컬럼·타입·쉬운 설명) ── */
+.schema{margin-top:24px;border:1px solid var(--grey-200);border-radius:var(--r-lg);overflow:hidden}
+.schema .sc-head{display:flex;align-items:center;gap:12px;padding:14px 24px;background:var(--grey-50);
+  border-bottom:1px solid var(--grey-200);font-family:var(--mono);font-size:19px;font-weight:700;color:var(--grey-900)}
+.schema .sc-head .cnt{margin-left:auto;font-family:var(--font);font-size:14px;font-weight:600;color:var(--grey-500)}
+.sc-row{display:grid;grid-template-columns:56px 190px 130px 1fr;align-items:center;gap:16px;
+  padding:10px 24px;border-bottom:1px solid var(--grey-100)}
+.sc-row:last-child{border-bottom:none}
+.sc-row .key{font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;text-align:center;
+  background:var(--grey-100);color:var(--grey-600)}
+.sc-row .key:empty{background:none}
+.sc-row .key.pk{background:var(--toss-blue-light);color:var(--toss-blue)}
+.sc-row .key.fk{background:#E4F6F6;color:var(--info)}
+.sc-row .col{font-family:var(--mono);font-size:17px;font-weight:600;color:var(--grey-900)}
+.sc-row .ty{font-family:var(--mono);font-size:15px;color:var(--grey-600)}
+.sc-row .desc{font-size:16px;line-height:1.5;color:var(--grey-700);word-break:keep-all}
+
+/* ── 데이터 흐름 (홉마다 그 지점의 데이터 모양을 함께 보여줌) ── */
+.dataflow{display:flex;align-items:stretch;justify-content:center;gap:14px;margin-top:36px}
+.hop{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;padding:20px 18px;
+  background:var(--grey-50);border:1px solid var(--grey-200);border-radius:var(--r-md)}
+.hop.hi{background:var(--toss-blue-light);border-color:#CFE4FF}
+.hop .t{font-size:18px;font-weight:700;color:var(--grey-900)}
+.hop .data{font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--grey-800);
+  background:var(--white);border:1px solid var(--grey-200);border-radius:var(--r-sm);padding:10px 12px;word-break:break-all}
+.hop .d{margin-top:auto;font-size:15px;line-height:1.5;color:var(--grey-600);word-break:keep-all}
+.dataflow .arrow{align-self:center}
+
+/* ── 레코드 변화 (Before → After, 바뀐 값만 강조) ── */
+table.diff td{font-family:var(--mono);font-size:16px}
+table.diff td:first-child{font-family:var(--font);font-weight:700}
+table.diff tr.was td{color:var(--grey-500)}
+table.diff tr.now td:first-child{color:var(--toss-blue)}
+table.diff td.chg{background:var(--toss-blue-light);color:var(--toss-blue);font-weight:700;border-radius:6px}
+
+/* ── 비교 매트릭스 (어떤 상황에 무엇이 맞는지) ── */
+table.matrix th:first-child,table.matrix td:first-child{width:52%}
+table.matrix th:not(:first-child),table.matrix td:not(:first-child){text-align:center}
+table.matrix td.yes{color:var(--positive);font-weight:700}
+table.matrix td.mid{color:var(--warning);font-weight:700}
+table.matrix td.no{color:var(--negative);font-weight:700}
+
+/* ── 계층 구조 (위에서 아래로 쌓인 층) ── */
+.layers{margin-top:32px;display:flex;flex-direction:column;gap:12px}
+.layer{display:flex;align-items:center;gap:20px;padding:18px 24px;
+  background:var(--grey-50);border:1px solid var(--grey-200);border-radius:var(--r-md)}
+.layer.hi{background:var(--toss-blue-light);border-color:#CFE4FF}
+.layer .t{width:200px;flex:none;font-size:19px;font-weight:700;color:var(--grey-900)}
+.layer .d{font-size:17px;line-height:1.5;color:var(--grey-700);word-break:keep-all}
+
+/* ── 쉬운 말 풀이 (전문 내용을 바로 아래에서 한 번 더 풀어줌) ── */
+.plain{margin-top:20px;padding:18px 22px;background:var(--toss-blue-light);border-radius:var(--r-md);
+  font-size:18px;line-height:1.6;color:var(--grey-800);word-break:keep-all}
+.plain b{margin-right:8px;color:var(--toss-blue);font-weight:700}
+
 /* ── HUD: 진행바·페이지·힌트 ── */
 #progress{position:fixed;top:0;left:0;height:4px;background:var(--toss-blue);width:0;z-index:20;transition:width .25s ease}
 /* 우하단: 홈 버튼(설정 시) + 페이지 카운터 */
@@ -207,7 +266,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   <!-- 2. 목차 -->
   <section class="slide">
     <div class="eyebrow">목차</div>
-    <h2 class="headline">오늘 이 세 가지를 다뤄요</h2>
+    <h2 class="headline">rp-deck를 이 세 가지 순서로 살펴봐요</h2>
     <div class="agenda-list">
       <div class="agenda-item"><span class="num">1</span>왜 문서가 안 읽히는지 짚어봐요</div>
       <div class="agenda-item"><span class="num">2</span>장표로 바꾸면 무엇이 달라지는지 보여드려요</div>
@@ -236,7 +295,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   <!-- 5. 요약 카드 (한 카드 = 한 메시지, ≤3) -->
   <section class="slide">
     <div class="eyebrow">핵심 세 가지</div>
-    <h2 class="headline">읽는 사람 관점에서 세 가지를 지켜요</h2>
+    <h2 class="headline">rp-deck는 읽는 사람 관점에서 세 가지를 지켜요</h2>
     <div class="card-row">
       <div class="card"><div class="ico">🎯</div><div class="t">한 장에 한 메시지</div><div class="d">주장 두 개가 섞이면 자동으로 장을 나눠요.</div></div>
       <div class="card"><div class="ico">📊</div><div class="t">글보다 그림으로</div><div class="d">숫자·비교는 차트와 카드로 바로 보이게 해요.</div></div>
@@ -261,7 +320,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   <!-- 7. 표 -->
   <section class="slide">
     <div class="eyebrow">입력 방식</div>
-    <h2 class="headline">상황에 맞는 입력을 골라 쓸 수 있어요</h2>
+    <h2 class="headline">rp-deck는 입력 방식 세 가지를 골라 쓸 수 있어요</h2>
     <table>
       <thead><tr><th>모드</th><th>입력</th><th class="num-cell">걸리는 시간</th></tr></thead>
       <tbody>
@@ -326,9 +385,9 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   </section>
 
   <!-- 9. 플로우 다이어그램 -->
-  <section class="slide center">
+  <section class="slide center has-gloss">
     <div class="eyebrow">동작 방식</div>
-    <h2 class="headline">문서에서 장표까지 네 단계로 흘러가요</h2>
+    <h2 class="headline">rp-deck는 문서에서 장표까지 네 단계로 흘러가요</h2>
     <div class="flow">
       <div class="node">문서·컨텍스트</div><span class="arrow">→</span>
       <div class="node">구조 자동 설계</div><span class="arrow">→</span>
@@ -336,6 +395,82 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
       <div class="node">분류 저장·인덱스</div>
     </div>
     <div class="gloss"><b>컨텍스트</b>: 방금 진행한 작업·대화 내용 · <b>인덱스</b>: 만든 장표를 한눈에 모아 보는 목록 페이지</div>
+  </section>
+
+  <!-- 스키마 카드 (테이블 구조를 눈으로 보여줌) -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">데이터 저장 방식</div>
+    <h2 class="headline">주문 테이블은 이런 칸들로 이뤄져 있어요</h2>
+    <div class="schema">
+      <div class="sc-head">orders<span class="cnt">컬럼 5개</span></div>
+      <div class="sc-row"><span class="key pk">PK</span><span class="col">id</span><span class="ty">BIGINT</span><span class="desc">주문마다 붙는 고유 번호예요</span></div>
+      <div class="sc-row"><span class="key fk">FK</span><span class="col">user_id</span><span class="ty">BIGINT</span><span class="desc">누가 주문했는지 회원 표를 가리켜요</span></div>
+      <div class="sc-row"><span class="key"></span><span class="col">status</span><span class="ty">VARCHAR(20)</span><span class="desc">결제 전인지 후인지 상태를 담아요</span></div>
+      <div class="sc-row"><span class="key"></span><span class="col">amount</span><span class="ty">DECIMAL(12,2)</span><span class="desc">결제 금액이에요. 소수점까지 정확히 담아요</span></div>
+      <div class="sc-row"><span class="key">IDX</span><span class="col">created_at</span><span class="ty">TIMESTAMP</span><span class="desc">주문한 시각이에요. 최근 순 조회에 자주 써서 색인을 걸어요</span></div>
+    </div>
+    <div class="plain"><b>쉽게 말하면</b> 엑셀 시트의 첫 줄(제목 줄)을 정해두는 일이에요. 어떤 칸을 만들지 미리 약속해두는 거예요.</div>
+    <div class="gloss"><b>컬럼</b>: 표의 세로 칸, 엑셀의 열 · <b>PK</b>(Primary Key): 행을 하나로 특정하는 대표 번호 · <b>FK</b>(Foreign Key): 다른 표의 행을 가리키는 연결 고리 · <b>IDX</b>(Index): 자주 찾는 값을 빨리 찾게 만든 색인, 책 맨 뒤 찾아보기와 같아요</div>
+  </section>
+
+  <!-- 데이터 흐름 (홉마다 데이터 모양 병기) -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">데이터 흐름</div>
+    <h2 class="headline">주문 데이터는 앱에서 DB까지 이렇게 모양을 바꿔요</h2>
+    <div class="dataflow">
+      <div class="hop"><div class="t">1 · 앱 화면</div><div class="data">금액 12,000원<br>버튼 클릭</div><div class="d">사용자가 누른 값이에요</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="t">2 · API 서버</div><div class="data">{"userId":7,<br> "amount":12000}</div><div class="d">서버가 알아듣는 JSON으로 바꿔요</div></div>
+      <span class="arrow">→</span>
+      <div class="hop hi"><div class="t">3 · 메시지 큐</div><div class="data">topic: order<br>key: 7</div><div class="d">몰려도 밀리지 않게 줄을 세워요</div></div>
+      <span class="arrow">→</span>
+      <div class="hop"><div class="t">4 · DB 저장</div><div class="data">INSERT INTO<br>orders (…)</div><div class="d">표의 한 줄로 최종 기록돼요</div></div>
+    </div>
+    <div class="gloss"><b>JSON</b>(JavaScript Object Notation): 이름과 값을 짝지어 적는 데이터 표기법 · <b>메시지 큐</b>: 요청을 줄 세워 순서대로 처리하는 대기줄 · <b>토픽</b>(topic): 큐 안에서 주제별로 나눈 칸 · <b>INSERT</b>: 표에 새 줄을 넣는 DB 명령</div>
+  </section>
+
+  <!-- 레코드 변화 (Before → After) -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">값의 변화</div>
+    <h2 class="headline">결제가 끝나면 주문 한 줄에서 두 칸이 바뀌어요</h2>
+    <table class="diff">
+      <thead><tr><th>시점</th><th>status</th><th>paid_at</th><th>amount</th></tr></thead>
+      <tbody>
+        <tr class="was"><td>결제 전</td><td>PENDING</td><td>NULL</td><td>12000.00</td></tr>
+        <tr class="now"><td>결제 후</td><td class="chg">PAID</td><td class="chg">2026-07-27 07:00</td><td>12000.00</td></tr>
+      </tbody>
+    </table>
+    <p class="subcopy">줄을 새로 만들지 않고 같은 줄의 값만 고쳐요. 그래서 주문 번호는 그대로예요.</p>
+    <div class="gloss"><b>레코드</b>: 표의 가로 한 줄, 주문 하나 · <b>NULL</b>: 아직 값이 없다는 표시(0이나 빈 글자와 다름) · <b>PENDING</b>: 결제를 기다리는 중이라는 상태값</div>
+  </section>
+
+  <!-- 비교 매트릭스 -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">기술 비교</div>
+    <h2 class="headline">Redis와 Kafka는 어울리는 자리가 서로 달라요</h2>
+    <table class="matrix">
+      <thead><tr><th>이런 상황이라면</th><th>Redis</th><th>Kafka</th></tr></thead>
+      <tbody>
+        <tr><td>같은 값을 아주 빨리 다시 꺼내기</td><td class="yes">잘 맞아요</td><td class="no">안 맞아요</td></tr>
+        <tr><td>주문이 한꺼번에 몰릴 때 줄 세우기</td><td class="mid">버거워요</td><td class="yes">잘 맞아요</td></tr>
+        <tr><td>지난 기록을 다시 돌려 읽기</td><td class="no">어려워요</td><td class="yes">잘 맞아요</td></tr>
+      </tbody>
+    </table>
+    <div class="plain"><b>쉽게 말하면</b> Redis는 자주 쓰는 물건을 올려두는 책상이고, Kafka는 물건이 순서대로 흘러가는 컨베이어 벨트예요.</div>
+    <div class="gloss"><b>Redis</b>: 데이터를 메모리에 두고 아주 빠르게 읽고 쓰는 저장소 · <b>Kafka</b>: 이벤트를 순서대로 쌓아두고 여러 곳이 나눠 읽는 메시지 플랫폼 · <b>메모리</b>: 전원이 꺼지면 사라지지만 디스크보다 훨씬 빠른 저장 공간</div>
+  </section>
+
+  <!-- 계층 구조 -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">전체 구조</div>
+    <h2 class="headline">서비스는 화면부터 DB까지 네 층으로 쌓여 있어요</h2>
+    <div class="layers">
+      <div class="layer"><div class="t">화면(프론트)</div><div class="d">사용자가 직접 보고 누르는 곳이에요.</div></div>
+      <div class="layer"><div class="t">API 서버</div><div class="d">누른 결과를 받아 규칙에 맞는지 확인하고 처리해요.</div></div>
+      <div class="layer hi"><div class="t">캐시</div><div class="d">자주 찾는 값을 미리 꺼내 두고 DB 대신 답해요.</div></div>
+      <div class="layer"><div class="t">데이터베이스</div><div class="d">최종 기록을 오래 안전하게 보관해요.</div></div>
+    </div>
+    <div class="gloss"><b>프론트</b>(frontend): 사용자 눈에 보이는 화면 영역 · <b>API</b>(Application Programming Interface): 화면과 서버가 주고받기로 정한 약속 · <b>캐시</b>(cache): 자주 쓰는 값을 잠깐 복사해 두는 임시 보관함 · <b>데이터베이스</b>(DB): 데이터를 표 형태로 오래 보관하는 창고</div>
   </section>
 
   <!-- 단계·시나리오 컴포넌트 -->
@@ -392,7 +527,7 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
   <a id="home" href="https://document-center.example.com/" title="게시판 홈으로">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈
   </a>
-  <div id="counter">1 / 16</div>
+  <div id="counter">1 / 21</div>
 </div>
 <div id="hint">← → · Space · F 전체화면</div>
 
