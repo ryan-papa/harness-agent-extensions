@@ -8,7 +8,7 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.18.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.19.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
@@ -49,9 +49,10 @@ harness-agent-extensions/
         ├── rp-deck/
         │   ├── SKILL.md              # 스킬 정의
         │   ├── reference/
-        │   │   ├── template.html     # 디자인·컴포넌트 SSOT
-        │   │   ├── design-rules.md   # 구조·전달력·토스 톤 규칙
-        │   │   └── review.md         # 독립 에이전트 병렬 리뷰 프로토콜
+        │   │   ├── template.html       # 디자인·컴포넌트 SSOT
+        │   │   ├── design-rules.md     # 독자 기준·구조·전달력·토스 톤 규칙
+        │   │   ├── visual-patterns.md  # 주제 → 시각 표현 매핑 SSOT
+        │   │   └── review.md           # 독립 에이전트 병렬 리뷰 프로토콜
         │   └── scripts/update_index.py  # 인덱스 생성 (stdlib only)
         └── rp-post/
             ├── SKILL.md              # 스킬 정의
