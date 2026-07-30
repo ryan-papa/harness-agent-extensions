@@ -52,15 +52,17 @@
 |----|----|------|
 | `repo` | `owner/name` 또는 사내 호스트 전체 URL | 장표 적재 대상 레포. 4레벨 자동 분류 후 `index.html` 갱신 |
 | `home` | 게시판 홈 URL | 각 장표 우하단에 게시판 홈 버튼 삽입 |
+| `obsidian` | vault 경로 \| `false` | topic 모드의 조사 원본·정리 노트 적재 대상. `false`는 **사용자가 거절함** — 이후 다시 묻지 않는다 |
 
 ```json
 {
   "repo": "owner/name",
-  "home": "https://example.com/decks/"
+  "home": "https://example.com/decks/",
+  "obsidian": "/path/to/vault"
 }
 ```
 
-주제 조사(topic) 모드는 조사 원본·정리 노트를 옵시디언 vault(설정 시)에도 남긴다.
+주제 조사(topic) 모드는 조사 원본·정리 노트를 옵시디언 vault(설정 시)에도 남긴다. vault를 한 번도 등록하지 않았으면 최초 1회만 물어보고, 필요 없다고 답하면 `"obsidian": false`로 기록해 **이후 실행에서 다시 묻지 않는다**.
 
 ## 구조
 
