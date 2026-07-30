@@ -529,7 +529,7 @@ table.matrix td.no{color:var(--negative);font-weight:700}
   </a>
   <div id="counter">1 / 21</div>
 </div>
-<div id="hint">← → · 휠 · Space · F 전체화면</div>
+<div id="hint">← → · Space · F 전체화면</div>
 
 <script>
 const slides=[...document.querySelectorAll('.slide')];
@@ -564,21 +564,6 @@ let x0=null;
 addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
 addEventListener('touchend',e=>{ if(x0===null)return; const dx=e.changedTouches[0].clientX-x0;
   if(Math.abs(dx)>50)(dx<0?next:prev)(); x0=null;});
-// 휠 — 눈금 하나에 한 장, 확 내리면 굴린 만큼 여러 장. 세로·가로(트랙패드 좌우 스와이프) 모두
-const WFIRST=60,WSTEP=280;          // 트랙패드: 첫 장은 60px만 굴려도, 이후는 280px마다 한 장
-let wAcc=0,wLast=0,wN=0;
-addEventListener('wheel',e=>{
-  if(e.ctrlKey)return;              // 핀치 줌은 브라우저에 양보
-  e.preventDefault();               // 가로 스와이프가 뒤로가기 제스처로 새지 않게
-  const raw=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;   // 움직임이 큰 축을 따른다
-  const d=raw*(e.deltaMode===1?40:e.deltaMode===2?800:1),now=performance.now(),gap=now-wLast;
-  wLast=now;
-  if(Math.abs(d)>=50&&gap>=40){ wAcc=0;wN=0; (d>0?next:prev)(); return; } // 마우스 눈금 1개 = 1장
-  if(gap>400||wAcc*d<0){wAcc=0;wN=0;}   // 손 뗐다 다시 굴리거나 방향 바뀌면 처음부터
-  wAcc+=d;
-  let th;                           // 첫 장은 살짝만 굴려도, 그다음부터 굴린 만큼
-  while(Math.abs(wAcc)>=(th=wN?WSTEP:WFIRST)){ wAcc>0?next():prev(); wAcc-=Math.sign(wAcc)*th; wN++; }
-},{passive:false});
 // 클릭 좌우 영역
 addEventListener('click',e=>{ if(e.target.closest('#home'))return; if(e.clientX>innerWidth*0.7)next(); else if(e.clientX<innerWidth*0.3)prev(); });
 addEventListener('resize',fit);
