@@ -8,11 +8,11 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.20.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.24.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
-| `rp-deck` | 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이드 장표로 변환. 환경별 지정 GitHub 레포에 4레벨 자동 분류 적재 + index.html 갱신 |
+| `rp-deck` | 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이드 장표로 변환. 환경별 지정 GitHub 레포에 4레벨 자동 분류 적재 + index.html 갱신. 올린 장표 삭제(URL·경로·제목 지정 → 확인 → index 재생성)도 지원 |
 | `rp-post` | 소재·경험·작업 결과를 목적에 맞는 글 초안으로 변환. SNS는 실측 데이터(쓰레드 IT/개발 인기글 150개 분석) 기반 바이럴 아키타입 6종, 사내 공유는 지식 정리 아키타입 3종(존댓말·슬랙/위키 2형) → 변형 초안 2~3개 + 체크리스트 검증 |
 | `rp-pr-review` | PR 링크 하나로 독립 리뷰어 둘(Claude 서브에이전트 ∥ Codex 서브프로세스)에게 동시 코드 리뷰 → 중복 병합 후 중요순 리스트로 터미널 출력. 파일 생성·PR 쓰기 없는 읽기 전용 |
 | `rp-codebase-recap` | 커밋 제목 요약이 아니라 **실제 코드를 정독**해 레포 전모를 재구성. 5-pass(광역 스캔 → 정독 대상 선정 → 심층 정독 → 문제해결 케이스 스터디 → 종합)로 개요·기술스택·아키텍처·역할/기여도·정량수치·리스크를 `파일:라인` 근거와 함께 터미널 출력. 파일 저장 없는 읽기 전용 |
@@ -32,6 +32,7 @@
 /rp-deck                       # 방금 끝낸 작업을 장표로
 /rp-deck docs/retro.md         # 특정 문서를 장표로
 /rp-deck 토스 디자인 시스템     # 주제를 조사(deep-research)해 장표로
+/rp-deck 코루틴 장표 지워줘      # 올린 장표 삭제 (URL·경로·제목 지정, 확인 후 삭제)
 
 /rp-post                       # 방금 끝낸 작업을 글 초안으로
 /rp-post docs/retro.md         # 특정 문서를 소재로
@@ -79,7 +80,9 @@ harness-agent-extensions/
         │   │   ├── design-rules.md     # 독자 기준·구조·전달력·토스 톤 규칙
         │   │   ├── visual-patterns.md  # 주제 → 시각 표현 매핑 SSOT
         │   │   └── review.md           # 독립 에이전트 병렬 리뷰 프로토콜
-        │   └── scripts/update_index.py  # 인덱스 생성 (stdlib only)
+        │   └── scripts/
+        │       ├── update_index.py    # 인덱스 생성 (stdlib only)
+        │       └── delete_deck.py     # 덱 삭제 + 인덱스 재생성 (stdlib only)
         ├── rp-pr-review/
         │   └── SKILL.md              # 스킬 정의 (단일 파일)
         ├── rp-codebase-recap/
