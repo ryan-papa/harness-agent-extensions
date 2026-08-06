@@ -5,10 +5,14 @@
 앞에서부터 개별 조회(프로브)해 --limit 개를 채우면 멈춘다.
 
 상태는 대상 루트(장표 레포)에 둔다. 로컬에만 두면 기기·캐시 초기화로 유실된다.
-  <root>/.rp-youtube/salt                   장표 메타용 해시 솔트 (레포 밖으로 나가지 않음)
-  <root>/.rp-youtube/registry.json          채널 별칭 등록부
-  <root>/.rp-youtube/channels/<slug>.json   채널별 제외·보류 기록
-  <root>/**/*.html 의 deck-source-ref       이미 장표로 만든 영상 (솔트 해시, 역산 불가)
+  <state>/salt                   장표 메타용 해시 솔트
+  <state>/registry.json          채널 별칭 등록부
+  <state>/channels/<slug>.json   채널별 제외·보류 기록
+  <root>/**/*.html 의 deck-source-ref   이미 장표로 만든 영상 (솔트 해시)
+
+장표 레포가 정적 사이트로 배포되면 <state>도 함께 서빙될 수 있다. 솔트가 공개되면
+채널을 짐작한 사람이 해시를 맞춰볼 수 있으므로, 그게 곤란한 환경이면 --state-dir 로
+배포에서 제외되는 경로를 지정한다.
 
 사용:
     python3 list_channel.py <채널> --root <대상루트> [--limit 10] [--out DIR] [--json]
@@ -90,8 +94,11 @@ def ytdlp(exe, url, extra, client=None, timeout=300):
 
 # ── 상태 파일 ────────────────────────────────────────────────────────────────
 
+_STATE_DIR = None
+
+
 def state_dir(root):
-    return Path(root) / ".rp-youtube"
+    return Path(_STATE_DIR) if _STATE_DIR else Path(root) / ".rp-youtube"
 
 
 def load_salt(root):
@@ -148,8 +155,11 @@ def published_refs(root):
     done = {}
     pat = re.compile(r'name="deck-source-ref"\s+content="([0-9a-f]{8,64})"')
     title_pat = re.compile(r'name="deck-title"\s+content="([^"]*)"')
-    for f in Path(root).rglob("*.html"):
-        if f.name == "index.html" or ".rp-youtube" in f.parts:
+    root = Path(root)
+    for f in root.rglob("*.html"):
+        # 루트 기준 상대경로로 본다. 캐시가 ~/.rp-deck 아래 있어서 절대경로로
+        # 판정하면 장표를 전부 숨김 처리해 버린다.
+        if f.name == "index.html" or any(p.startswith(".") for p in f.relative_to(root).parts):
             continue
         try:
             head = f.read_text(encoding="utf-8", errors="ignore")[:4000]
@@ -274,7 +284,8 @@ def hhmm(sec):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("channel", nargs="?", help="핸들(@name)·채널 URL·영상 URL·등록 별칭")
-    ap.add_argument("--root", required=True, help="상태·장표가 있는 대상 루트")
+    ap.add_argument("--root", required=True, help="장표가 있는 대상 루트")
+    ap.add_argument("--state-dir", help="상태를 둘 경로 (기본 <root>/.rp-youtube)")
     ap.add_argument("--limit", type=int, default=10, help="찾을 후보 개수 (기본 10)")
     ap.add_argument("--out", default=".", help="후보 JSON을 쓸 디렉터리")
     ap.add_argument("--alias", help="이 채널을 이 이름으로 등록")
@@ -286,7 +297,11 @@ def main():
     ap.add_argument("--json", action="store_true", help="결과를 stdout에 JSON으로")
     args = ap.parse_args()
 
+    global _STATE_DIR
     root = Path(args.root).expanduser().resolve()
+    if args.state_dir:
+        _STATE_DIR = (root / args.state_dir) if not Path(args.state_dir).is_absolute() \
+            else Path(args.state_dir)
     if not root.is_dir():
         log(f"대상 루트가 없습니다: {root}")
         sys.exit(3)
