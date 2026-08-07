@@ -8,7 +8,7 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.26.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.27.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
@@ -16,6 +16,8 @@
 | `rp-post` | 소재·경험·작업 결과를 목적에 맞는 글 초안으로 변환. SNS는 실측 데이터(쓰레드 IT/개발 인기글 150개 분석) 기반 바이럴 아키타입 6종, 사내 공유는 지식 정리 아키타입 3종(존댓말·슬랙/위키 2형) → 변형 초안 2~3개 + 체크리스트 검증 |
 | `rp-pr-review` | PR 링크 하나로 독립 리뷰어 둘(Claude 서브에이전트 ∥ Codex 서브프로세스)에게 동시 코드 리뷰 → 중복 병합 후 중요순 리스트로 터미널 출력. 파일 생성·PR 쓰기 없는 읽기 전용 |
 | `rp-codebase-recap` | 커밋 제목 요약이 아니라 **실제 코드를 정독**해 레포 전모를 재구성. 5-pass(광역 스캔 → 정독 대상 선정 → 심층 정독 → 문제해결 케이스 스터디 → 종합)로 개요·기술스택·아키텍처·역할/기여도·정량수치·리스크를 `파일:라인` 근거와 함께 터미널 출력. 파일 저장 없는 읽기 전용 |
+| `rp-youtube` | 유튜브 링크 하나로 자막(원어 우선)을 받아 타임스탬프 전사본을 만들고, 자동자막의 STT 오인식을 도메인 표기·숫자 교차검증으로 정규화한 뒤 구조·핵심 주장·수치·인용 출처를 타임스탬프 근거와 함께 터미널 출력. 자막만 받고 영상·오디오는 받지 않으며, 멤버십·비공개 영상은 우회하지 않고 중단 |
+| `rp-youtube-deck` | `rp-youtube` 분석 → 영상이 인용한 **원천 문서 직접 검증**(일치/보강/불일치/확인불가 대조표) → `rp-deck` 파이프라인으로 장표 생성·독립 리뷰·분류 적재·push. 원문이 영상과 다르면 원문을 싣고 차이를 명시 |
 
 ## 설치
 
@@ -43,7 +45,15 @@
 /rp-codebase-recap                            # 현재 레포를 심층 발굴
 /rp-codebase-recap museum-finder              # 레포 이름으로 지정
 /rp-codebase-recap https://github.com/owner/repo 작성자   # GitHub URL + 작성자 스코프
+
+/rp-youtube https://youtu.be/VIDEOID          # 영상 자막 전사 → 분석 (터미널 출력)
+/rp-youtube https://youtu.be/VIDEOID 성능 관점으로   # 분석 초점 지정
+
+/rp-youtube-deck https://youtu.be/VIDEOID     # 영상 분석 → 원천 검증 → 장표 생성·push
+/rp-youtube-deck https://youtu.be/VIDEOID 20장 실무 가이드로   # 분량·성격 지정
 ```
+
+`rp-youtube` 계열은 [yt-dlp](https://github.com/yt-dlp/yt-dlp)로 **자막과 메타데이터만** 받는다. 설치돼 있지 않으면 최초 실행 시 `~/.rp-youtube/venv`에 자동 설치한다.
 
 ### 설정 — `.rp-deck.json`
 
@@ -87,6 +97,12 @@ harness-agent-extensions/
         │   └── SKILL.md              # 스킬 정의 (단일 파일)
         ├── rp-codebase-recap/
         │   └── SKILL.md              # 스킬 정의 (단일 파일)
+        ├── rp-youtube/
+        │   ├── SKILL.md              # 스킬 정의
+        │   └── scripts/
+        │       └── fetch_transcript.py  # 메타+자막 → 타임스탬프 전사본 (stdlib + yt-dlp)
+        ├── rp-youtube-deck/
+        │   └── SKILL.md              # 오케스트레이터 (rp-youtube → 원천 검증 → rp-deck)
         └── rp-post/
             ├── SKILL.md              # 스킬 정의
             └── reference/
