@@ -120,6 +120,26 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .linechart .lc-val{font-size:16px;font-weight:700;fill:var(--grey-900)}
 .linechart .lc-x{font-size:14px;font-weight:600;fill:var(--grey-600)}
 
+/* ── 타임라인 (구간 비교: 언제 시작해 언제까지인지, 어느 구간이 어느 구간을 품는지) ── */
+.timeline{margin-top:24px}
+.timeline svg{width:100%;height:auto;max-height:340px;display:block}
+.timeline text{font-family:var(--font)}
+.timeline .tl-name{font-size:14px;font-weight:600;fill:var(--grey-700)}
+.timeline .tl-bar{fill:var(--toss-blue)}
+.timeline .tl-bar.outer{fill:var(--grey-300)}      /* 바깥(가장 큰) 구간 */
+.timeline .tl-bar.wait{fill:var(--grey-500)}       /* 대기 구간 */
+.timeline .tl-bar.info{fill:var(--info)}
+.timeline .tl-bar.ok{fill:var(--positive)}         /* 실측·정상 구간 */
+.timeline .tl-bar.bad{fill:var(--negative)}        /* 초과·위험 구간 */
+.timeline .tl-bar.ghost{fill:var(--toss-blue-light);stroke:var(--toss-blue);stroke-width:1.5}
+.timeline .tl-val{font-size:15px;font-weight:700;fill:#fff}
+.timeline .tl-val.on-light{fill:var(--grey-800)}   /* outer·ghost 위 글자 */
+.timeline .tl-val.on-ghost{fill:var(--toss-blue)}
+.timeline .tl-mark{stroke:var(--grey-300);stroke-width:1;stroke-dasharray:4 4}
+.timeline .tl-mark-t{font-size:12px;font-weight:600;fill:var(--grey-500)}
+.timeline .tl-axis{stroke:var(--grey-200);stroke-width:1}
+.timeline .tl-tick{font-size:13px;font-weight:600;fill:var(--grey-600)}
+
 /* ── 도넛 (구성비 ≤5; conic-gradient, 가운데 라벨 + 직접 범례) ── */
 .donut-row{display:flex;align-items:center;gap:56px;margin-top:44px}
 .donut{width:260px;height:260px;border-radius:50%;flex:none;position:relative}
@@ -366,6 +386,51 @@ table.matrix td.no{color:var(--negative);font-weight:700}
     <p class="slide-note">* 예시 데이터 — 실제 값이 있을 때만 차트를 써요.</p>
   </section>
 
+  <!-- 타임라인 (구간 비교; 공통 시간축에 겹쳐 포함 관계를 보여줌) -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">구간 비교</div>
+    <h2 class="headline">DB 타임아웃 구간을 한 시간축에 겹쳐봐요</h2>
+    <div class="timeline">
+      <svg viewBox="0 0 1104 236" preserveAspectRatio="xMidYMid meet" role="img" aria-label="요청이 들어온 뒤 각 타임아웃이 재는 구간을 시간축에 겹쳐 그린 타임라인">
+        <!-- 기준선: 구간들의 시작점이 갈리는 지점 -->
+        <line class="tl-mark" x1="520" y1="18" x2="520" y2="196"/>
+        <text class="tl-mark-t" x="526" y="13">커넥션 확보 · 쿼리 시작</text>
+
+        <!-- 구간: x=시작 시각, width=길이 (0초=280, 1초=80px) -->
+        <text class="tl-name" x="250" y="38" text-anchor="end">HTTP 클라이언트</text>
+        <rect class="tl-bar outer" x="280" y="22" width="800" height="22" rx="4"/>
+        <text class="tl-val on-light" x="680" y="38" text-anchor="middle">10초</text>
+
+        <text class="tl-name" x="250" y="74" text-anchor="end">풀 대기 · connectionTimeout</text>
+        <rect class="tl-bar wait" x="280" y="58" width="240" height="22" rx="4"/>
+        <text class="tl-val" x="400" y="74" text-anchor="middle">3초</text>
+
+        <text class="tl-name" x="250" y="110" text-anchor="end">트랜잭션 · @Transactional</text>
+        <rect class="tl-bar ghost" x="520" y="94" width="480" height="22" rx="4"/>
+        <text class="tl-val on-ghost" x="760" y="110" text-anchor="middle">6초</text>
+
+        <text class="tl-name" x="250" y="146" text-anchor="end">소켓 읽기 · socketTimeout</text>
+        <rect class="tl-bar" x="520" y="130" width="320" height="22" rx="4"/>
+        <text class="tl-val" x="680" y="146" text-anchor="middle">4초</text>
+
+        <text class="tl-name" x="250" y="182" text-anchor="end">정상 쿼리 (실측)</text>
+        <rect class="tl-bar ok" x="520" y="166" width="160" height="22" rx="4"/>
+        <text class="tl-val" x="600" y="182" text-anchor="middle">2초</text>
+
+        <!-- 시간축 -->
+        <line class="tl-axis" x1="280" y1="200" x2="1080" y2="200"/>
+        <text class="tl-tick" x="280" y="220" text-anchor="middle">0초</text>
+        <text class="tl-tick" x="440" y="220" text-anchor="middle">2초</text>
+        <text class="tl-tick" x="600" y="220" text-anchor="middle">4초</text>
+        <text class="tl-tick" x="760" y="220" text-anchor="middle">6초</text>
+        <text class="tl-tick" x="920" y="220" text-anchor="middle">8초</text>
+        <text class="tl-tick" x="1080" y="220" text-anchor="middle">10초</text>
+      </svg>
+    </div>
+    <div class="plain"><b>쉽게 말하면</b> 러시아 인형처럼 안쪽 상자가 바깥 상자보다 작아야 해요. 안쪽이 더 크면 바깥 상자 뚜껑이 안 닫혀요.</div>
+    <div class="gloss"><b>타임아웃</b>(timeout): 여기까지만 기다리고 끊겠다고 정해 둔 시간 · <b>connectionTimeout</b>: 커넥션 풀에서 커넥션을 받기까지 기다리는 한도 · <b>socketTimeout</b>: 요청을 보낸 뒤 응답 한 조각을 기다리는 한도 · <b>트랜잭션</b>(transaction): 여러 쿼리를 "다 되거나 다 안 되거나"로 묶는 단위</div>
+  </section>
+
   <!-- 도넛 (구성비 ≤5; 직접 범례 + 값 병기) -->
   <section class="slide">
     <div class="eyebrow">구성비</div>
@@ -527,7 +592,7 @@ table.matrix td.no{color:var(--negative);font-weight:700}
   <a id="home" href="https://document-center.example.com/" title="게시판 홈으로">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈
   </a>
-  <div id="counter">1 / 21</div>
+  <div id="counter">1 / 22</div>
 </div>
 <div id="hint">← → · Space · F 전체화면</div>
 
