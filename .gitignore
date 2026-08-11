@@ -3,6 +3,8 @@ docs/decks/
 
 # 도구 부산물
 .gstack/
+__pycache__/
+*.pyc
 
 # OS
 .DS_Store
