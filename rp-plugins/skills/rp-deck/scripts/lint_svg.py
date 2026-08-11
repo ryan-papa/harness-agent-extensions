@@ -5,6 +5,7 @@
 눈으로 놓치는 세 가지를 기계로 잡는다.
 
   OVERLAP  인접 text의 baseline 간격이 글자 크기보다 좁고 가로로 겹침
+  NODE_OVERLAP  박스끼리 걸쳐 있음 (품는 관계는 정상)
   CLIP     요소가 viewBox 밖 (SVG 루트는 overflow:hidden이라 잘림)
   INDENT   반복 행 블록(막대 트랙 등)이 x=0이 아닌 곳에서 시작 — 헤드라인과 어긋남
 
@@ -98,6 +99,27 @@ def check(vw, vh, texts, rects):
                            "— 왼쪽 여백이 비어 헤드라인 좌단과 어긋난다"
                  % (len(set(ys)), x, w, top, bottom, gutter))
             )
+
+    # 2차원 배치(시스템 구성도 등)에서 박스끼리 겹쳤는지.
+    # 존이 노드를 완전히 품는 건 정상이므로, 걸쳐만 있는 쌍을 잡는다.
+    for i, a in enumerate(rects):
+        for b in rects[i + 1:]:
+            ox = min(a["x"] + a["w"], b["x"] + b["w"]) - max(a["x"], b["x"])
+            oy = min(a["y"] + a["h"], b["y"] + b["h"]) - max(a["y"], b["y"])
+            if ox <= 1 or oy <= 1:
+                continue
+            contained = any(
+                inner["x"] >= outer["x"] - 1 and inner["y"] >= outer["y"] - 1
+                and inner["x"] + inner["w"] <= outer["x"] + outer["w"] + 1
+                and inner["y"] + inner["h"] <= outer["y"] + outer["h"] + 1
+                for outer, inner in ((a, b), (b, a))
+            )
+            if not contained:
+                found.append(
+                    ("NODE_OVERLAP", "박스 (x=%g y=%g %gx%g) 와 (x=%g y=%g %gx%g) 가 %g×%g 만큼 걸쳐 있다 "
+                                     "— 품는 관계가 아니면 겹치면 안 된다"
+                     % (a["x"], a["y"], a["w"], a["h"], b["x"], b["y"], b["w"], b["h"], ox, oy))
+                )
     return found
 
 

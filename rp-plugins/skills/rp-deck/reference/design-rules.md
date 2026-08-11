@@ -32,7 +32,7 @@
 
 표준 흐름: 표지 → 목차(주장형) → [섹션구분 → 큰숫자/카드/대비/표/차트/다이어그램/단계/코드/공식] 반복 → 마무리 한 줄.
 
-컴포넌트(마크업은 [`template.html`](template.html)): 표지·목차·섹션구분·큰숫자(KPI)·요약카드·2단대비·표·막대차트·선차트(추세)·도넛(구성비)·플로우·한줄강조·단계(steps: key/bad/ok)·코드블록·공식강조·용어각주(gloss)·용어집(terms)·**스키마카드(schema)**·**데이터흐름(dataflow)**·**레코드변화(table.diff)**·**비교매트릭스(table.matrix)**·**계층구조(layers)**·**쉬운말풀이(plain)**.
+컴포넌트(마크업은 [`template.html`](template.html)): 표지·목차·섹션구분·큰숫자(KPI)·요약카드·2단대비·표·막대차트·선차트(추세)·도넛(구성비)·플로우·한줄강조·단계(steps: key/bad/ok)·코드블록·공식강조·용어각주(gloss)·용어집(terms)·**스키마카드(schema)**·**데이터흐름(dataflow)**·**레코드변화(table.diff)**·**비교매트릭스(table.matrix)**·**계층구조(layers)**·**쉬운말풀이(plain)**·**타임라인(timeline)**·**시스템구성도(sysmap)**.
 
 ## 2. 슬라이드 한 장 원칙
 
@@ -58,6 +58,7 @@
 | **표로 쓸 수 있으면 표로** | 항목이 둘 이상 비교되면 문장 대신 `table`. "A는 ~하고 B는 ~해요" 문장이 나오려 하면 그 자리에서 표로 바꾼다 | rp-deck |
 | **수치 2개 이상이면 차트** | 비교 가능한 실측치가 2개 이상이면 `.bars`, 시간 흐름이면 `.linechart`, 구성비면 `.donut`. 수치를 문장 안에 흘려보내지 않는다 | rp-deck |
 | **구간·시간은 타임라인으로** | 시간·구간 값이 3개 이상 나열되면 `.timeline`. 길이만이 아니라 **어디서 시작해 어디까지인지·서로 품는지**를 같은 축에 겹쳐 보여준다 | rp-deck |
+| **서비스 구성은 구성도로** | 서버·DB·캐시·큐·외부 연동이 2개 이상 나오면 `.sysmap`. **어디까지가 우리 시스템이고**(경계) 각각이 무엇이며(타입) 무슨 연결인지(동기·비동기)를 한 장에 담는다 | rp-deck |
 | **수치가 없으면 공식으로** | 실데이터가 없어도 계산으로 유도되는 값은 `.formula` 한 줄로 보여준다. 가정은 각주에 명시 | rp-deck |
 | data-ink 최대화 | 그리드·테두리·3D·그림자·불필요한 색 제거. 장식 배경·질감 금지 | Tufte |
 | 직접 라벨 | 범례 대신 막대·선·범례 항목에 값 직접 표기 | UC Berkeley |
@@ -201,7 +202,8 @@
 - [ ] **전 슬라이드가 1280×720 안에 들어감 — 높이 예산으로 더해보거나 실제로 렌더해 확인**([`visual-patterns.md`](visual-patterns.md) §7)
 - [ ] **손으로 그린 인라인 SVG의 모든 블록이 x=0에서 시작함 — 라벨 열이 있는 막대·리스트도 라벨을 x=0에 둠**([`visual-patterns.md`](visual-patterns.md) §8)
 - [ ] **인접 `<text>`의 y 간격이 글자 크기 + 8 이상이고, 어떤 요소도 viewBox 밖으로 나가지 않음**([`visual-patterns.md`](visual-patterns.md) §8)
-- [ ] **`lint_svg.py`를 돌려 OVERLAP·CLIP 0건**(INDENT는 판단 후 채택·보류, [`visual-patterns.md`](visual-patterns.md) §8)
+- [ ] **`lint_svg.py`를 돌려 OVERLAP·NODE_OVERLAP·CLIP 0건**(INDENT는 판단 후 채택·보류, [`visual-patterns.md`](visual-patterns.md) §8)
+- [ ] **시스템 구성도(`.sysmap`)에 포트·내부 호스트·내부 IP·인증서 경로가 없음 — 프로토콜까지만**([`visual-patterns.md`](visual-patterns.md) §3)
 
 ## 11. 코드·사례·주장의 정합성
 
@@ -237,3 +239,5 @@
 | 2026-07-31 | 덱에서 가장 어려운 장에 정작 쉬운 말 풀이가 없었다 | §0 "가장 어려운 장엔 풀이 필수" |
 | 2026-08-11 | 손으로 그린 SVG 안에서 막대 4줄만 x=200에서 시작해 헤드라인·상단 흐름(x=0)과 어긋났다. 라벨 열을 오른쪽 맞춤(`text-anchor="end"`)하려고 왼쪽을 비운 게 원인 | [`visual-patterns.md`](visual-patterns.md) §8 신설, §10 체크, `scripts/lint_svg.py` |
 | 2026-08-11 | 같은 SVG에서 텍스트 두 줄을 y=252·258로 적어 6px 간격으로 겹쳤다. SVG는 자동 흐름이 없어 겹쳐도 오류가 안 난다 | [`visual-patterns.md`](visual-patterns.md) §8 "세로 간격", `scripts/lint_svg.py` OVERLAP |
+| 2026-08-11 | §8을 "모든 요소가 x=0"으로 적었더니 라벨을 오른쪽 맞춤하는 `.timeline`과 규칙이 충돌했다. 원칙은 **블록의 가장 왼쪽 끝이 x=0**이고, 오른쪽 맞춤은 가장 긴 라벨이 x=0에 오면 된다 | [`visual-patterns.md`](visual-patterns.md) §8 표 재작성 |
+| 2026-08-11 | 서비스 구성(서버·DB·Redis·외부 연동)을 그릴 컴포넌트가 없어 매번 인라인 SVG를 새로 짰다. `.flow`는 경로만 보여줘 경계·타입·동기여부를 담지 못한다 | `.sysmap` 신설(`template.html`), [`visual-patterns.md`](visual-patterns.md) §2·§3·§7, §3 "서비스 구성은 구성도로" |

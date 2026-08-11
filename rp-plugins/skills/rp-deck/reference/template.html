@@ -140,6 +140,31 @@ tr td:first-child{font-weight:600;color:var(--grey-900)}
 .timeline .tl-axis{stroke:var(--grey-200);stroke-width:1}
 .timeline .tl-tick{font-size:13px;font-weight:600;fill:var(--grey-600)}
 
+/* ── 시스템 구성도 (서버·DB·캐시·큐가 어떻게 배치되고 무엇으로 연결되는지) ── */
+.sysmap{margin-top:24px}
+.sysmap svg{width:100%;height:auto;max-height:400px;display:block}
+.sysmap text{font-family:var(--font)}
+/* 경계: 바깥=우리가 운영하는 범위, 안쪽=서브시스템 묶음 */
+.sysmap .sm-zone{fill:none;stroke:var(--grey-300);stroke-width:1.5;stroke-dasharray:6 4}
+.sysmap .sm-zone-t{font-size:13px;font-weight:700;fill:var(--grey-500)}
+.sysmap .sm-group{fill:none;stroke:var(--grey-200);stroke-width:1.5;stroke-dasharray:3 3}
+.sysmap .sm-group-t{font-size:12px;font-weight:700;fill:var(--grey-600)}
+/* 노드: 색 역할 4개(진입점·우리 서비스·상태 저장소·외부)만 쓰고, 8종 타입은 노드 안 라벨로 구분 */
+.sysmap .sm-node{fill:var(--grey-50);stroke:var(--grey-300);stroke-width:1.5}          /* DB·캐시·큐·스토리지 */
+.sysmap .sm-node.app{fill:var(--toss-blue-light);stroke:var(--toss-blue)}              /* 앱서버·게이트웨이 */
+.sysmap .sm-node.entry{fill:var(--grey-900);stroke:none}                               /* 클라이언트(진입점) */
+.sysmap .sm-node.ext{fill:var(--white);stroke:var(--grey-400);stroke-dasharray:4 3}    /* 경계 밖 외부 시스템 */
+.sysmap .sm-type{font-size:11px;font-weight:700;fill:var(--grey-500);letter-spacing:.04em}
+.sysmap .sm-type.on-app{fill:var(--toss-blue)}
+.sysmap .sm-type.on-entry{fill:var(--grey-400)}
+.sysmap .sm-name{font-size:15px;font-weight:600;fill:var(--grey-900)}
+.sysmap .sm-name.on-entry{fill:#fff}
+.sysmap .sm-name.on-ext{fill:var(--grey-700)}
+/* 연결: 실선=동기 호출, 점선=비동기. 선마다 무슨 연결인지 라벨을 붙인다 */
+.sysmap .sm-link{fill:none;stroke:var(--grey-400);stroke-width:1.5;marker-end:url(#sm-arrow)}
+.sysmap .sm-link.async{stroke-dasharray:5 4}
+.sysmap .sm-link-t{font-size:12px;font-weight:600;fill:var(--grey-600)}
+
 /* ── 도넛 (구성비 ≤5; conic-gradient, 가운데 라벨 + 직접 범례) ── */
 .donut-row{display:flex;align-items:center;gap:56px;margin-top:44px}
 .donut{width:260px;height:260px;border-radius:50%;flex:none;position:relative}
@@ -431,6 +456,97 @@ table.matrix td.no{color:var(--negative);font-weight:700}
     <div class="gloss"><b>타임아웃</b>(timeout): 여기까지만 기다리고 끊겠다고 정해 둔 시간 · <b>connectionTimeout</b>: 커넥션 풀에서 커넥션을 받기까지 기다리는 한도 · <b>socketTimeout</b>: 요청을 보낸 뒤 응답 한 조각을 기다리는 한도 · <b>트랜잭션</b>(transaction): 여러 쿼리를 "다 되거나 다 안 되거나"로 묶는 단위</div>
   </section>
 
+  <!-- 시스템 구성도 (경계 안팎 · 노드 타입 · 동기/비동기 연결) -->
+  <section class="slide has-gloss">
+    <div class="eyebrow">시스템 구성</div>
+    <h2 class="headline">주문 서비스는 이렇게 연결돼 있어요</h2>
+    <div class="sysmap">
+      <svg viewBox="0 0 1104 352" preserveAspectRatio="xMidYMid meet" role="img" aria-label="클라이언트에서 게이트웨이를 거쳐 주문 API로 들어오고, 주문 API가 PostgreSQL·Redis를 쓰고 Kafka로 이벤트를 발행하면 정산 워커가 구독해 배송사로 접수하는 구성">
+        <defs>
+          <marker id="sm-arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L7,3 L0,6 Z" fill="var(--grey-400)"/>
+          </marker>
+        </defs>
+
+        <!-- 경계: 우리가 운영하는 범위. 밖에 있는 건 남의 시스템 -->
+        <rect class="sm-zone" x="142" y="8" width="726" height="336" rx="14"/>
+        <text class="sm-zone-t" x="158" y="28">우리 서비스</text>
+
+        <!-- 서브그룹 -->
+        <rect class="sm-group" x="314" y="32" width="298" height="94" rx="12"/>
+        <text class="sm-group-t" x="314" y="28">주문 서비스</text>
+        <rect class="sm-group" x="314" y="152" width="298" height="94" rx="12"/>
+        <text class="sm-group-t" x="314" y="144">데이터 저장소</text>
+
+        <!-- 1행: 진입 → 게이트웨이 → 앱서버 → 외부 결제사 -->
+        <rect class="sm-node entry" x="0" y="48" width="112" height="62" rx="8"/>
+        <text class="sm-type on-entry" x="56" y="70" text-anchor="middle">CLIENT</text>
+        <text class="sm-name on-entry" x="56" y="94" text-anchor="middle">웹·앱</text>
+
+        <rect class="sm-node app" x="178" y="48" width="120" height="62" rx="8"/>
+        <text class="sm-type on-app" x="238" y="70" text-anchor="middle">GATEWAY</text>
+        <text class="sm-name" x="238" y="94" text-anchor="middle">API 게이트웨이</text>
+
+        <rect class="sm-node app" x="332" y="48" width="262" height="62" rx="8"/>
+        <text class="sm-type on-app" x="463" y="70" text-anchor="middle">APP</text>
+        <text class="sm-name" x="463" y="94" text-anchor="middle">주문 API</text>
+
+        <rect class="sm-node ext" x="902" y="48" width="178" height="62" rx="8"/>
+        <text class="sm-type" x="991" y="70" text-anchor="middle">EXTERNAL</text>
+        <text class="sm-name on-ext" x="991" y="94" text-anchor="middle">결제사 API</text>
+
+        <!-- 2행: 저장소 + 큐 -->
+        <rect class="sm-node" x="332" y="168" width="130" height="62" rx="8"/>
+        <text class="sm-type" x="397" y="190" text-anchor="middle">DB</text>
+        <text class="sm-name" x="397" y="214" text-anchor="middle">PostgreSQL</text>
+
+        <rect class="sm-node" x="474" y="168" width="120" height="62" rx="8"/>
+        <text class="sm-type" x="534" y="190" text-anchor="middle">CACHE</text>
+        <text class="sm-name" x="534" y="214" text-anchor="middle">Redis</text>
+
+        <rect class="sm-node" x="648" y="168" width="198" height="62" rx="8"/>
+        <text class="sm-type" x="747" y="190" text-anchor="middle">QUEUE</text>
+        <text class="sm-name" x="747" y="214" text-anchor="middle">Kafka · 비동기 이벤트</text>
+
+        <!-- 3행: 구독자 → 외부 배송사 -->
+        <rect class="sm-node app" x="648" y="272" width="198" height="62" rx="8"/>
+        <text class="sm-type on-app" x="747" y="294" text-anchor="middle">APP</text>
+        <text class="sm-name" x="747" y="318" text-anchor="middle">정산 워커</text>
+
+        <rect class="sm-node ext" x="902" y="272" width="178" height="62" rx="8"/>
+        <text class="sm-type" x="991" y="294" text-anchor="middle">EXTERNAL</text>
+        <text class="sm-name on-ext" x="991" y="318" text-anchor="middle">배송사 API</text>
+
+        <!-- 연결: 실선=동기 호출 -->
+        <path class="sm-link" d="M112,79 L172,79"/>
+        <text class="sm-link-t" x="145" y="70" text-anchor="middle">주문 요청</text>
+
+        <path class="sm-link" d="M298,79 L326,79"/>
+        <text class="sm-link-t" x="315" y="70" text-anchor="middle">HTTP</text>
+
+        <path class="sm-link" d="M594,79 L896,79"/>
+        <text class="sm-link-t" x="748" y="70" text-anchor="middle">결제 승인 요청</text>
+
+        <path class="sm-link" d="M397,110 L397,162"/>
+        <text class="sm-link-t" x="405" y="144">주문 저장</text>
+
+        <path class="sm-link" d="M534,110 L534,162"/>
+        <text class="sm-link-t" x="542" y="144">재고 캐시 조회</text>
+
+        <!-- 연결: 점선=비동기 (발행·구독) -->
+        <path class="sm-link async" d="M594,95 L620,95 L620,199 L642,199"/>
+        <text class="sm-link-t" x="634" y="175" text-anchor="middle">발행</text>
+
+        <path class="sm-link async" d="M747,230 L747,266"/>
+        <text class="sm-link-t" x="757" y="255">이벤트 구독</text>
+
+        <path class="sm-link" d="M846,303 L896,303"/>
+        <text class="sm-link-t" x="874" y="296" text-anchor="middle">배송 접수</text>
+      </svg>
+    </div>
+    <div class="gloss"><b>게이트웨이</b>(gateway): 바깥 요청을 먼저 받아 인증·라우팅을 해 주는 입구 · <b>캐시</b>(cache): 자주 쓰는 값을 빠른 저장소에 잠깐 두는 것 · <b>큐</b>(queue): 할 일을 줄 세워 두면 다른 서비스가 나중에 꺼내 처리하는 통로 · <b>동기·비동기</b>: 실선은 답을 기다리는 호출, 점선은 답을 안 기다리고 넘기는 연결이에요 · <b>경계 밖</b>: 점선 테두리는 우리가 운영하지 않는 남의 시스템이에요</div>
+  </section>
+
   <!-- 도넛 (구성비 ≤5; 직접 범례 + 값 병기) -->
   <section class="slide">
     <div class="eyebrow">구성비</div>
@@ -592,7 +708,7 @@ table.matrix td.no{color:var(--negative);font-weight:700}
   <a id="home" href="https://document-center.example.com/" title="게시판 홈으로">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>홈
   </a>
-  <div id="counter">1 / 22</div>
+  <div id="counter">1 / 23</div>
 </div>
 <div id="hint">← → · Space · F 전체화면</div>
 
