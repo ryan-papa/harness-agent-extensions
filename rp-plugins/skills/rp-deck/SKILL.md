@@ -17,6 +17,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 | [`reference/review.md`](reference/review.md) | 독립 서브에이전트 리뷰 프로토콜 (2라운드, 건당 10분 타임아웃, 작성자 셀프리뷰 금지) + **리뷰어 프롬프트 템플릿** |
 | [`scripts/update_index.py`](scripts/update_index.py) | 덱 트리 스캔 → 게시판 index.html 생성: 좌측 디렉토리 트리(전체+뎁스 중첩) + 우측 리스트, 트리·검색 필터는 임베드 JSON 기반 클라이언트 렌더 (stdlib only) |
 | [`scripts/delete_deck.py`](scripts/delete_deck.py) | 덱 삭제: URL·경로·제목으로 대상 해석 → dry-run 목록 → `--yes` 시 파일 삭제 + 빈 디렉터리 정리 + index 재생성 (stdlib only) |
+| [`scripts/lint_svg.py`](scripts/lint_svg.py) | 인라인 SVG 좌표 린트: 텍스트 겹침(OVERLAP)·viewBox 이탈(CLIP)·왼쪽 여백 이탈(INDENT). 지적 있으면 종료 코드 1 (stdlib only) |
 
 ## 입력 모드 (인자로 자동 판단)
 
@@ -147,6 +148,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 8. **저장** — 신규: 대상 루트(레포 모드=캐시, 로컬 모드=`<cwd>/docs/decks`) 아래 `<1>/<2>/<3>/<4>/<제목>_<YYYY-MM-DD>.html`(공백→`-`, 특수문자 제거). 보강: 기존 파일 경로에 덮어쓰기.
 9. **인덱스 갱신** — `python3 <스킬경로>/scripts/update_index.py <대상 루트>` 실행.
 10. **자가 린트** — [`design-rules.md`](reference/design-rules.md) §10 체크리스트를 통과하는지 확인 후 위반 시 수정. **전 슬라이드가 1280×720 안에 들어가는지 반드시 확인한다** — 넘치면 글자가 잘리고 각주와 겹친다([`visual-patterns.md`](reference/visual-patterns.md) §7).
+    - 손으로 그린 인라인 SVG가 있으면 `python3 <스킬경로>/scripts/lint_svg.py <생성한 HTML>`을 돌린다. **OVERLAP·CLIP은 반드시 0건으로 고치고**, INDENT는 계층 표현인지 판단해 채택·보류한다([`visual-patterns.md`](reference/visual-patterns.md) §8).
 11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **새 서브에이전트(Agent 툴)**에 [`review.md`](reference/review.md) §3 프롬프트 템플릿을 그대로 넘겨 10개 항목 평가를 받는다(⛔ 매번 프롬프트를 새로 짓지 않는다). **호출 1건당 10분 상한**을 프롬프트에 명시하고, 초과하면 1줄 기록 후 스킵·재시도 없음. 수정 후 §4를 덧붙여 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료.
 12. **적재 (레포 모드만)** — 캐시에서 `git add -A` → 커밋 → `git push`. **push 성공까지 확인**하고, 실패하면 중단·보고(로컬에만 커밋 남기지 않음). 로컬 모드는 건너뛴다.
 13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. (§옵시디언 지식베이스)
@@ -173,6 +175,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 - **어려운 용어는 나올 때마다 다시 푼다** — 앞 장에서 설명했더라도 그 장에서 또 설명한다. 독자는 중간부터 볼 수도 있고, 각주는 본문을 밀지 않아 반복 비용이 거의 없다. ([`design-rules.md`](reference/design-rules.md) §8)
 - **코드는 복붙 가능해야 한다** — 생성자·필드·import가 빠져 컴파일되지 않는 예제 금지. 줄였으면 `.cmt`에 명시. **캡션이 주장하는 동작은 그 장 코드에 실제로 보여야** 하고, 앞 장의 판정과 뒤 장의 해법이 모순되면 안 된다. 단정 앞에는 반례를 확인하고, 인용한 사례엔 출처와 결말을 적는다. ([`design-rules.md`](reference/design-rules.md) §11)
 - **720px를 넘기지 않는다** — 설계 단계에서 높이 예산으로 더해보고, 만든 뒤 실제로 확인한다. 넘치면 눌리지 않고 잘린다. ([`visual-patterns.md`](reference/visual-patterns.md) §7)
+- **손으로 그린 SVG는 좌단 x=0** — `viewBox="0 0 1104 H"`를 쓰면 x=0이 헤드라인 왼쪽 끝과 맞는다. 라벨 열이 있는 막대·리스트도 **라벨을 x=0**에 두고 막대를 뒤에 붙인다(왼쪽을 비워 두지 않는다). 인접 `<text>`의 y 간격은 글자 크기 + 8 이상, viewBox 밖 이탈 금지. push 전 `lint_svg.py`로 OVERLAP·CLIP 0건 확인. ([`visual-patterns.md`](reference/visual-patterns.md) §8)
 - **작업 전 원격 최신화 필수 (레포 모드)** — 기존 문서 확인·생성 전에 캐시를 `fetch`+`reset --hard origin/<기본브랜치>`로 원격 최신에 맞춘다(stale 캐시로 판단 금지). 각 실행은 push까지 완료.
 - **레포 호스트 일반화** — `repo`는 `owner/name`(github.com)과 전체 URL(사내 GitHub Enterprise 등 다른 호스트)을 모두 허용. ⛔ github.com으로 가정하지 말고, 전체 URL이면 그 URL로 clone/fetch·링크한다.
 - **옵시디언은 topic 모드만·vault 컨벤션 준수** — 조사 원본은 vault `sources/`에 보존하고 정리는 `wiki/`에. vault `CLAUDE.md` 스키마를 먼저 읽어 그대로 따르고, rp-deck 임의 폴더/형식을 강요하지 않는다. 타깃은 명시 입력만 인정. ⛔ 민감정보 기록 금지.

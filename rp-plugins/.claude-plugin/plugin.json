@@ -1,6 +1,6 @@
 {
   "name": "rp-plugins",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "하네스 확장 플러그인. 작업 산출물을 토스 스타일 HTML 장표로 변환하는 rp-deck, 실측 바이럴 패턴 기반 글 초안 생성 rp-post, 특정 레포를 심층 발굴 분석하는 rp-codebase-recap, PR을 독립 리뷰어 둘에게 병렬 리뷰시켜 중요순으로 정리하는 rp-pr-review, 유튜브 영상을 자막 전사·정규화해 분석하는 rp-youtube, 그 분석을 원천 검증 후 장표로 만드는 rp-youtube-deck, 채널에서 아직 안 다룬 영상을 추리는 rp-youtube-channel 등 rp-* 스킬 모음.",
   "author": {
     "name": "Rapa-Space"
