@@ -122,7 +122,8 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
    - 결론 먼저(Minto), 도입은 SCQA, 목차·섹션은 주제 라벨이 아닌 **주장**으로.
    - 한 장 = 한 메시지. 주장이 2개 이상이면 장을 나눈다.
    - **헤드라인에 대상 이름**: 무슨 기술·제품 이야기인지 헤드라인 안에 넣어 제목만 봐도 주제가 잡히게 한다. "응답이 40% 빨라졌어요"(X) → "Redis 캐시를 거치니 응답이 40% 빨라졌어요"(O). ([`design-rules.md`](reference/design-rules.md) §2)
-   - 각 장에 맞는 컴포넌트 선택은 [`visual-patterns.md`](reference/visual-patterns.md) §2 매핑표에서 고른다: 스키마카드 / 데이터흐름 / 레코드변화 / 비교매트릭스 / 계층구조 / 쉬운말풀이 / 큰숫자 KPI / 요약카드 / 2단대비 / 표 / 막대 / 선차트 / **타임라인 구간(timeline)** / 도넛 / 플로우 / 단계(steps) / 코드블록 / 공식강조 / 용어집(terms) / 한줄강조.
+   - 각 장에 맞는 컴포넌트 선택은 [`visual-patterns.md`](reference/visual-patterns.md) §2 매핑표에서 고른다: 스키마카드 / 데이터흐름 / 레코드변화 / 비교매트릭스 / 계층구조 / 쉬운말풀이 / 큰숫자 KPI / 요약카드 / 2단대비 / 표 / 막대 / 선차트 / **타임라인 구간(timeline)** / **시스템 구성도(sysmap)** / 도넛 / 플로우 / 단계(steps) / 코드블록 / 공식강조 / 용어집(terms) / 한줄강조.
+   - **서버·DB·캐시·큐·외부 연동이 2개 이상 나오면 `.sysmap`** — 경계(어디까지 우리 것인지)·타입·동기/비동기를 한 장에 담는다. `.flow`는 경로만 필요할 때. ⛔ 포트·내부 호스트·내부 IP는 적지 않는다. ([`visual-patterns.md`](reference/visual-patterns.md) §3)
    - **시각화 우선**: 데이터 저장·흐름·값 변화·기술 비교·구조·추세·구성비는 텍스트 나열 대신 전용 컴포넌트로 그린다. **그림 없는 슬라이드가 연속 3장을 넘으면 그 구간을 다시 설계한다.** 다이어그램에는 추상 라벨 대신 실제 컬럼명·값·데이터 조각을 넣는다.
    - **표·차트·공식을 먼저 떠올린다**: 항목이 둘 이상 비교되면 문장 대신 `table`, 비교 가능한 실측치가 2개 이상이면 `.bars`·`.linechart`·`.donut`, **시간·구간 값이 3개 이상 나열되면 `.timeline`**(어디서 시작해 어디까지인지·서로 품는지가 보이게), 실데이터가 없어도 계산으로 유도되는 값은 `.formula` 한 줄로 보여준다(가정은 각주). ([`design-rules.md`](reference/design-rules.md) §3)
    - **병기**: 시각 요소가 텍스트를 대체하지 않는다 — 핵심 해석·수치·용어 설명을 함께 둔다. 어려운 개념 바로 아래에는 `.plain`(쉬운 말 풀이)로 일상 비유를 한 문장 붙인다.
@@ -148,7 +149,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 8. **저장** — 신규: 대상 루트(레포 모드=캐시, 로컬 모드=`<cwd>/docs/decks`) 아래 `<1>/<2>/<3>/<4>/<제목>_<YYYY-MM-DD>.html`(공백→`-`, 특수문자 제거). 보강: 기존 파일 경로에 덮어쓰기.
 9. **인덱스 갱신** — `python3 <스킬경로>/scripts/update_index.py <대상 루트>` 실행.
 10. **자가 린트** — [`design-rules.md`](reference/design-rules.md) §10 체크리스트를 통과하는지 확인 후 위반 시 수정. **전 슬라이드가 1280×720 안에 들어가는지 반드시 확인한다** — 넘치면 글자가 잘리고 각주와 겹친다([`visual-patterns.md`](reference/visual-patterns.md) §7).
-    - 손으로 그린 인라인 SVG가 있으면 `python3 <스킬경로>/scripts/lint_svg.py <생성한 HTML>`을 돌린다. **OVERLAP·CLIP은 반드시 0건으로 고치고**, INDENT는 계층 표현인지 판단해 채택·보류한다([`visual-patterns.md`](reference/visual-patterns.md) §8).
+    - 손으로 그린 인라인 SVG가 있으면 `python3 <스킬경로>/scripts/lint_svg.py <생성한 HTML>`을 돌린다. **OVERLAP·NODE_OVERLAP·CLIP은 반드시 0건으로 고치고**, INDENT는 계층 표현인지 판단해 채택·보류한다([`visual-patterns.md`](reference/visual-patterns.md) §8).
 11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **새 서브에이전트(Agent 툴)**에 [`review.md`](reference/review.md) §3 프롬프트 템플릿을 그대로 넘겨 10개 항목 평가를 받는다(⛔ 매번 프롬프트를 새로 짓지 않는다). **호출 1건당 10분 상한**을 프롬프트에 명시하고, 초과하면 1줄 기록 후 스킵·재시도 없음. 수정 후 §4를 덧붙여 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료.
 12. **적재 (레포 모드만)** — 캐시에서 `git add -A` → 커밋 → `git push`. **push 성공까지 확인**하고, 실패하면 중단·보고(로컬에만 커밋 남기지 않음). 로컬 모드는 건너뛴다.
 13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. (§옵시디언 지식베이스)
@@ -175,7 +176,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 - **어려운 용어는 나올 때마다 다시 푼다** — 앞 장에서 설명했더라도 그 장에서 또 설명한다. 독자는 중간부터 볼 수도 있고, 각주는 본문을 밀지 않아 반복 비용이 거의 없다. ([`design-rules.md`](reference/design-rules.md) §8)
 - **코드는 복붙 가능해야 한다** — 생성자·필드·import가 빠져 컴파일되지 않는 예제 금지. 줄였으면 `.cmt`에 명시. **캡션이 주장하는 동작은 그 장 코드에 실제로 보여야** 하고, 앞 장의 판정과 뒤 장의 해법이 모순되면 안 된다. 단정 앞에는 반례를 확인하고, 인용한 사례엔 출처와 결말을 적는다. ([`design-rules.md`](reference/design-rules.md) §11)
 - **720px를 넘기지 않는다** — 설계 단계에서 높이 예산으로 더해보고, 만든 뒤 실제로 확인한다. 넘치면 눌리지 않고 잘린다. ([`visual-patterns.md`](reference/visual-patterns.md) §7)
-- **손으로 그린 SVG는 좌단 x=0** — `viewBox="0 0 1104 H"`를 쓰면 x=0이 헤드라인 왼쪽 끝과 맞는다. 라벨 열이 있는 막대·리스트도 **라벨을 x=0**에 두고 막대를 뒤에 붙인다(왼쪽을 비워 두지 않는다). 인접 `<text>`의 y 간격은 글자 크기 + 8 이상, viewBox 밖 이탈 금지. push 전 `lint_svg.py`로 OVERLAP·CLIP 0건 확인. ([`visual-patterns.md`](reference/visual-patterns.md) §8)
+- **손으로 그린 SVG는 블록 좌단이 x=0** — `viewBox="0 0 1104 H"`를 쓰면 x=0이 헤드라인 왼쪽 끝과 맞는다. 라벨 열을 오른쪽 맞춤할 땐 **가장 긴 라벨이 x=0**에 오게 앵커를 잡는다(짧은 라벨을 넉넉한 앵커에 붙이면 왼쪽이 이유 없이 빈다). 인접 `<text>`의 y 간격은 글자 크기 + 8 이상, 박스끼리 걸치기 금지(품는 건 정상), viewBox 밖 이탈 금지. push 전 `lint_svg.py`로 OVERLAP·NODE_OVERLAP·CLIP 0건 확인. ([`visual-patterns.md`](reference/visual-patterns.md) §8)
 - **작업 전 원격 최신화 필수 (레포 모드)** — 기존 문서 확인·생성 전에 캐시를 `fetch`+`reset --hard origin/<기본브랜치>`로 원격 최신에 맞춘다(stale 캐시로 판단 금지). 각 실행은 push까지 완료.
 - **레포 호스트 일반화** — `repo`는 `owner/name`(github.com)과 전체 URL(사내 GitHub Enterprise 등 다른 호스트)을 모두 허용. ⛔ github.com으로 가정하지 말고, 전체 URL이면 그 URL로 clone/fetch·링크한다.
 - **옵시디언은 topic 모드만·vault 컨벤션 준수** — 조사 원본은 vault `sources/`에 보존하고 정리는 `wiki/`에. vault `CLAUDE.md` 스키마를 먼저 읽어 그대로 따르고, rp-deck 임의 폴더/형식을 강요하지 않는다. 타깃은 명시 입력만 인정. ⛔ 민감정보 기록 금지.
