@@ -73,12 +73,21 @@ def check(vw, vh, texts, rects):
                  % (a["y"], a["s"], b["y"], b["s"], gap, max(a["fs"], b["fs"])))
             )
 
+    # viewBox 밖은 네 방향 모두 잘린다. 오른쪽·아래만 보면
+    # text-anchor="end" 앵커를 글자 폭이 넘어설 때 생기는 왼쪽 잘림을 놓친다.
     for t in texts:
         if t["y"] + t["fs"] * 0.25 > vh or t["x"] + t["w"] > vw + 1:
             found.append(("CLIP", "text «%s» x=%g y=%g (viewBox %gx%g)" % (t["s"], t["x"], t["y"], vw, vh)))
+        elif t["x"] < -1 or t["y"] - t["fs"] < -1:
+            found.append(
+                ("CLIP", "text «%s» 좌단 x=%g · 상단 y=%g — viewBox 왼쪽·위로 넘어간다"
+                         "(앵커 폭 계산을 다시 본다)" % (t["s"], t["x"], t["y"] - t["fs"]))
+            )
     for r in rects:
         if r["y"] + r["h"] > vh + 1 or r["x"] + r["w"] > vw + 1:
             found.append(("CLIP", "rect x=%g y=%g %gx%g (viewBox %gx%g)" % (r["x"], r["y"], r["w"], r["h"], vw, vh)))
+        elif r["x"] < -1 or r["y"] < -1:
+            found.append(("CLIP", "rect x=%g y=%g — viewBox 왼쪽·위로 넘어간다" % (r["x"], r["y"])))
 
     # 반복 행 블록(막대 트랙·리스트) 옆에 빈 왼쪽 여백이 남았는지.
     # 그 행들이 걸친 y 구간에서 가장 왼쪽 요소마저 안쪽에 있으면 블록 전체가 들여쓰기된 것이다.
