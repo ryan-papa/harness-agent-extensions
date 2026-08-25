@@ -14,7 +14,7 @@
 |------|------|
 | `rp-deck` | 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이드 장표로 변환. 환경별 지정 GitHub 레포에 4레벨 자동 분류 적재 + index.html 갱신. 올린 장표 삭제(URL·경로·제목 지정 → 확인 → index 재생성)도 지원 |
 | `rp-post` | 소재·경험·작업 결과를 목적에 맞는 글 초안으로 변환. SNS는 실측 데이터(쓰레드 IT/개발 인기글 150개 분석) 기반 바이럴 아키타입 6종, 사내 공유는 지식 정리 아키타입 3종(존댓말·슬랙/위키 2형) → 변형 초안 2~3개 + 체크리스트 검증 |
-| `rp-pr-review` | PR 링크 하나로 독립 리뷰어 둘(Claude 서브에이전트 ∥ Codex 서브프로세스)에게 동시 코드 리뷰 → 중복 병합 후 중요순 리스트로 터미널 출력. 파일 생성·PR 쓰기 없는 읽기 전용 |
+| `rp-pr-review` | PR 링크 하나로 진입 런타임의 독립 서브에이전트에게 코드 리뷰 → 지적을 중요순 리스트로 터미널 출력. 파일 생성·PR 쓰기 없는 읽기 전용 |
 | `rp-codebase-recap` | 커밋 제목 요약이 아니라 **실제 코드를 정독**해 레포 전모를 재구성. 5-pass(광역 스캔 → 정독 대상 선정 → 심층 정독 → 문제해결 케이스 스터디 → 종합)로 개요·기술스택·아키텍처·역할/기여도·정량수치·리스크를 `파일:라인` 근거와 함께 터미널 출력. 파일 저장 없는 읽기 전용 |
 | `rp-youtube` | 유튜브 링크 하나로 자막(원어 우선)을 받아 타임스탬프 전사본을 만들고, 자동자막의 STT 오인식을 도메인 표기·숫자 교차검증으로 정규화한 뒤 구조·핵심 주장·수치·인용 출처를 타임스탬프 근거와 함께 터미널 출력. 자막만 받고 영상·오디오는 받지 않으며, 멤버십·비공개 영상은 우회하지 않고 중단 |
 | `rp-youtube-channel` | 채널의 공개 영상을 최신순으로 훑어 **장표로 만들 수 있는 후보만** 추림. 이미 만든 영상(장표의 `deck-source-ref` 해시 메타)과 멤버십·자막없음으로 걸러진 영상을 건너뛰고 남은 것만 순차 프로브. 상태는 장표 레포에 두어 기기가 바뀌어도 유지. 터미널 표 + 후보 JSON 출력 |
@@ -41,7 +41,7 @@
 /rp-post docs/retro.md         # 특정 문서를 소재로
 /rp-post 사이드프로젝트 첫 배포 후기   # 텍스트를 소재로
 
-/rp-pr-review https://github.com/owner/repo/pull/9   # PR을 두 리뷰어에게 병렬 리뷰
+/rp-pr-review https://github.com/owner/repo/pull/9   # PR을 독립 서브에이전트로 리뷰
 
 /rp-codebase-recap                            # 현재 레포를 심층 발굴
 /rp-codebase-recap museum-finder              # 레포 이름으로 지정
@@ -94,7 +94,7 @@ harness-agent-extensions/
         │   │   ├── template.html       # 디자인·컴포넌트 SSOT
         │   │   ├── design-rules.md     # 독자 기준·구조·전달력·토스 톤 규칙
         │   │   ├── visual-patterns.md  # 주제 → 시각 표현 매핑 SSOT
-        │   │   └── review.md           # 독립 에이전트 병렬 리뷰 프로토콜
+        │   │   └── review.md           # 독립 서브에이전트 리뷰 프로토콜
         │   └── scripts/
         │       ├── update_index.py    # 인덱스 생성 (stdlib only)
         │       └── delete_deck.py     # 덱 삭제 + 인덱스 재생성 (stdlib only)
@@ -119,5 +119,5 @@ harness-agent-extensions/
                 ├── archetypes.md     # 아키타입 공식 (바이럴 A1~A6 · 사내 K1~K3)
                 ├── checklist.md      # 초안 검증 (바이럴용·사내용 각 7항목)
                 ├── platforms.md      # 플랫폼 프로파일·변환 규칙
-                └── review.md         # 독립 에이전트 병렬 리뷰 프로토콜
+                └── review.md         # 독립 서브에이전트 리뷰 프로토콜
 ```
