@@ -1,0 +1,36 @@
+name: PR Check
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JSON 유효성
+        run: |
+          for f in $(git ls-files '*.json'); do
+            python3 -m json.tool "$f" > /dev/null || { echo "❌ $f"; exit 1; }
+          done
+
+      - name: SKILL.md frontmatter (name·description)
+        run: |
+          failed=0
+          for f in rp-plugins/skills/*/SKILL.md; do
+            head -5 "$f" | grep -q '^name:' && head -5 "$f" | grep -q '^description:' || { echo "❌ $f"; failed=1; }
+          done
+          exit $failed
+
+      - name: plugin.json 버전 = CHANGELOG 최신 버전
+        run: |
+          v=$(python3 -c "import json;print(json.load(open('rp-plugins/.claude-plugin/plugin.json'))['version'])")
+          c=$(grep -m1 -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | tr -d '#[] ')
+          [ "$v" = "$c" ] || { echo "❌ plugin.json $v ≠ CHANGELOG $c"; exit 1; }
+
+      - name: Python 문법
+        run: |
+          files=$(git ls-files '*.py')
+          [ -z "$files" ] || python3 -m py_compile $files
