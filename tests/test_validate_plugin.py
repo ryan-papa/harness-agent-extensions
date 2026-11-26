@@ -1,7 +1,9 @@
-"""Unit tests for scripts/validate_plugin.py."""
+"""Unit tests for scripts/validate_plugin.py and scripts/plugin_frontmatter.py."""
 
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -35,8 +37,8 @@ def _make_valid_repo(root: Path, version: str = "0.35.0") -> None:
                 "displayName": "RP Harness Extensions",
                 "version": version,
                 "description": "Multi-runtime harness extension skills.",
-                "suggestedPrompts": ["Run deck", "Run post"],
-                "author": {"name": "Rapa-Space"},
+                "suggestedPrompts": ["Run deck", "Run post", "Run youtube deck"],
+                "author": {"name": "Rapa-Space", "url": "https://github.com/ryan-papa"},
                 "repository": "https://github.com/ryan-papa/harness-agent-extensions",
                 "keywords": ["harness", "skills"],
             },
@@ -99,14 +101,16 @@ class ValidatePluginTest(unittest.TestCase):
             self.assertFalse(res.ok)
             self.assertTrue(any("no skills found" in e for e in res.errors), res.errors)
 
-    def test_invalid_json_fails(self) -> None:
+    def test_invalid_json_reported_once_without_duplicate_errors(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _make_valid_repo(root)
-            (root / ".claude-plugin" / "marketplace.json").write_text("{broken", encoding="utf-8")
+            (root / "rp-plugins" / ".claude-plugin" / "plugin.json").write_text("{broken", encoding="utf-8")
             res = vp.validate_repo(root)
             self.assertFalse(res.ok)
-            self.assertTrue(any("invalid JSON" in e for e in res.errors), res.errors)
+            json_errs = [e for e in res.errors if "invalid JSON" in e]
+            self.assertEqual(len(json_errs), 1, res.errors)
+            self.assertFalse(any("missing string 'version'" in e for e in res.errors), res.errors)
 
     def test_antigravity_manifest_schema_rules(self) -> None:
         with tempfile.TemporaryDirectory() as td:
@@ -115,10 +119,15 @@ class ValidatePluginTest(unittest.TestCase):
             path = root / "rp-plugins" / ".antigravity-plugin" / "plugin.json"
             data = json.loads(path.read_text(encoding="utf-8"))
             data["unknownExtraKey"] = True
-            data["displayName"] = "Antigravity RP Plugins"
-            data["suggestedPrompts"] = ["a", "b", "c", "d"]
+            data["displayName"] = "AntigravityHelper MyPlugin"
+            data["suggestedPrompts"] = []
             data["repository"] = "http://insecure.example.com/repo"
-            data["author"] = {"name": "Org", "extraField": "bad"}
+            data["author"] = {
+                "name": "Org",
+                "email": 12345,
+                "url": "http://insecure.example.com",
+                "extraField": "bad",
+            }
             path.write_text(json.dumps(data), encoding="utf-8")
 
             res = vp.validate_repo(root)
@@ -126,10 +135,12 @@ class ValidatePluginTest(unittest.TestCase):
             joined = "\n".join(res.errors)
             self.assertIn("additionalProperties=false", joined)
             self.assertIn("must not start with 'antigravity'", joined)
-            self.assertIn("must not end with 'plugins'", joined)
+            self.assertIn("must not end with 'plugin'", joined)
             self.assertIn("suggestedPrompts", joined)
             self.assertIn("'repository' must be an https:// URL", joined)
             self.assertIn("'author' has disallowed keys", joined)
+            self.assertIn("'author.email' must be a non-empty string", joined)
+            self.assertIn("'author.url' must start with https://", joined)
 
     def test_four_way_version_mismatch_detected(self) -> None:
         for target_file in (
@@ -147,34 +158,70 @@ class ValidatePluginTest(unittest.TestCase):
                 self.assertFalse(res.ok)
                 self.assertTrue(any("version mismatch" in e for e in res.errors), res.errors)
 
-    def test_multiline_frontmatter_and_name_validation(self) -> None:
+    def test_frontmatter_edge_cases_and_length_boundaries(self) -> None:
+        # Folded scalar + 0-indent YAML sequence
         text = (
             "---\n"
             "name: sample-skill\n"
             "description: >-\n"
             "  First line\n"
             "  second line\n"
+            "allowed-tools:\n"
+            "- Bash\n"
+            "- Read\n"
             "---\n\n"
             "Body\n"
         )
         meta, body = vp.parse_frontmatter(text)
         self.assertEqual(meta["name"], "sample-skill")
         self.assertEqual(meta["description"], "First line second line")
+        self.assertEqual(meta["allowed-tools"], ["Bash", "Read"])
         self.assertEqual(body, "Body\n")
 
+        # Trailing spaces on closing '---' + markdown HR in body must NOT bypass 24KB limit
+        bypass_attempt = (
+            "---\nname: rp-demo\ndescription: hr bypass check\n---   \n\n"
+            + ("a" * 25_000)
+            + "\n---\nshort tail\n"
+        )
+        _, parsed_body = vp.parse_frontmatter(bypass_attempt)
+        self.assertGreater(len(parsed_body.encode("utf-8")), 24_000)
+
+        # Empty frontmatter parses cleanly and fails required fields
+        empty_meta, empty_body = vp.parse_frontmatter("---\n---\nHello\n")
+        self.assertEqual(empty_meta, {})
+        self.assertEqual(empty_body, "Hello\n")
+
+        # Name (64 vs 65) and description (1024 vs 1025) boundaries + unreadable UTF-8
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _make_valid_repo(root)
-            skill_md = root / "rp-plugins" / "skills" / "rp-demo" / "SKILL.md"
-            skill_md.write_text(
-                "---\nname: wrong-name\ndescription: |\n\n---\n\n# Body\n",
+            long_name_ok = "a" * 64
+            (root / "rp-plugins" / "skills" / long_name_ok).mkdir()
+            (root / "rp-plugins" / "skills" / long_name_ok / "SKILL.md").write_text(
+                f"---\nname: {long_name_ok}\ndescription: {'d' * 1024}\n---\n\n# ok\n",
                 encoding="utf-8",
             )
-            res = vp.validate_repo(root)
-            self.assertFalse(res.ok)
-            joined = "\n".join(res.errors)
-            self.assertIn("frontmatter name 'wrong-name' != directory 'rp-demo'", joined)
-            self.assertIn("missing non-empty 'description'", joined)
+            res_ok = vp.validate_repo(root)
+            self.assertTrue(res_ok.ok, res_ok.errors)
+
+            long_name_bad = "b" * 65
+            (root / "rp-plugins" / "skills" / long_name_bad).mkdir()
+            (root / "rp-plugins" / "skills" / long_name_bad / "SKILL.md").write_text(
+                f"---\nname: {long_name_bad}\ndescription: {'d' * 1025}\n---\n\n# bad\n",
+                encoding="utf-8",
+            )
+            res_bad = vp.validate_repo(root)
+            self.assertFalse(res_bad.ok)
+            joined = "\n".join(res_bad.errors)
+            self.assertIn("1..64 char kebab-case", joined)
+            self.assertIn("exceeds 1024 chars", joined)
+
+            # Corrupt UTF-8 file produces validation error instead of crashing
+            (root / "rp-plugins" / "skills" / long_name_bad / "SKILL.md").write_bytes(b"\xff\xfe\x00")
+            res_corrupt = vp.validate_repo(root)
+            self.assertFalse(res_corrupt.ok)
+            self.assertTrue(any("unreadable UTF-8 text" in e for e in res_corrupt.errors), res_corrupt.errors)
 
     def test_body_byte_boundaries(self) -> None:
         header = "---\nname: rp-demo\ndescription: boundary check\n---\n\n"
@@ -193,14 +240,19 @@ class ValidatePluginTest(unittest.TestCase):
                 self.assertEqual(res.ok, expect_ok, res.errors)
                 self.assertEqual(bool(res.warnings), expect_warn, res.warnings)
 
-    def test_relative_links_escape_and_code_fence_handling(self) -> None:
+    def test_relative_links_nested_fences_and_escape_handling(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _make_valid_repo(root)
             skill_md = root / "rp-plugins" / "skills" / "rp-demo" / "SKILL.md"
             skill_md.write_text(
                 "---\nname: rp-demo\ndescription: link test\n---\n\n"
-                "```markdown\n[ignored](nonexistent.md)\n[ignored2](../../../README.md)\n```\n\n"
+                "````markdown\n"
+                "```text\n"
+                "[nested-ignored](missing-nested.md)\n"
+                "```\n"
+                "[still-inside-4-fence](missing-nested-2.md)\n"
+                "````\n\n"
                 "인라인 `[ignored3](missing.md)` 무시.\n"
                 "[ok](reference/guide.md)\n",
                 encoding="utf-8",
@@ -208,14 +260,12 @@ class ValidatePluginTest(unittest.TestCase):
             res = vp.validate_repo(root)
             self.assertTrue(res.ok, res.errors)
 
-            # Broken link inside reference/*.md
             ref_md = root / "rp-plugins" / "skills" / "rp-demo" / "reference" / "guide.md"
             ref_md.write_text("[broken](missing.md)\n", encoding="utf-8")
             res_broken = vp.validate_repo(root)
             self.assertFalse(res_broken.ok)
             self.assertTrue(any("broken relative link" in e for e in res_broken.errors))
 
-            # Path traversal escaping rp-plugins root
             ref_md.write_text("[escape](../../../../README.md)\n", encoding="utf-8")
             res_escape = vp.validate_repo(root)
             self.assertFalse(res_escape.ok)
@@ -225,31 +275,36 @@ class ValidatePluginTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             _make_valid_repo(root)
-            # docs/prd/ should be excluded from public scan
             (root / "docs" / "prd").mkdir(parents=True)
-            fake_local = "/" + "Users/alice/workspace"
+            fake_mac = "/" + "Users/alice/workspace"
+            fake_linux = "/" + "home/bob/project"
             fake_ghp = "ghp_" + ("A" * 24)
+            fake_pat = "github_pat_" + ("C" * 24)
             fake_sk = "sk-" + ("B" * 20)
-            fake_age = "age1" + ("a" * 54)
+            fake_age_pub = "age1" + ("a" * 54)
+            fake_age_sec = "AGE-SECRET-KEY-1" + ("X" * 54)
             (root / "docs" / "prd" / "sample.md").write_text(
-                f"{fake_local}\n{fake_ghp}\n{fake_sk}\n{fake_age}\n",
+                "\n".join((fake_mac, fake_linux, fake_ghp, fake_pat, fake_sk, fake_age_pub, fake_age_sec)),
                 encoding="utf-8",
             )
-            # Benign hyphenated words must not trigger sk- false positives
             ref_md = root / "rp-plugins" / "skills" / "rp-demo" / "reference" / "guide.md"
             ref_md.write_text("task-12345678901234567890 disk-abcdefghijklmnop\n", encoding="utf-8")
             res_clean = vp.validate_repo(root)
             self.assertTrue(res_clean.ok, res_clean.errors)
 
-            # Public artifact with local path + tokens must fail
-            ref_md.write_text(f"{fake_local}\n{fake_ghp}\n{fake_sk}\n{fake_age}\n", encoding="utf-8")
+            ref_md.write_text(
+                "\n".join((fake_mac, fake_linux, fake_ghp, fake_pat, fake_sk, fake_age_pub, fake_age_sec)),
+                encoding="utf-8",
+            )
             res_dirty = vp.validate_repo(root)
             self.assertFalse(res_dirty.ok)
             joined = "\n".join(res_dirty.errors)
-            self.assertIn("local absolute path", joined)
+            self.assertEqual(joined.count("local absolute path"), 2, joined)
             self.assertIn("GitHub classic token", joined)
+            self.assertIn("GitHub fine-grained token", joined)
             self.assertIn("API secret key", joined)
-            self.assertIn("age public/secret recipient key", joined)
+            self.assertIn("age public recipient key", joined)
+            self.assertIn("age secret key", joined)
 
     def test_rp_deck_split_and_youtube_deck_cross_references(self) -> None:
         deck_skill = REPO_ROOT / "rp-plugins" / "skills" / "rp-deck" / "SKILL.md"
@@ -302,16 +357,29 @@ class ValidatePluginTest(unittest.TestCase):
         self.assertNotIn("Agent", recap_meta.get("allowed-tools", []))
         self.assertIn("/tmp", recap_body)
 
-    def test_actual_repo_passes_validation_and_cli(self) -> None:
+    def test_actual_repo_passes_validation_and_cli_io(self) -> None:
         res = vp.validate_repo(REPO_ROOT)
         self.assertTrue(res.ok, res.errors)
         self.assertEqual(res.warnings, [], res.warnings)
         self.assertEqual(res.skill_count, 6)
-        self.assertEqual(vp.main(["--repo-root", str(REPO_ROOT)]), 0)
 
-    def test_cli_returns_nonzero_on_invalid_repo(self) -> None:
+        out = io.StringIO()
+        err = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+            rc = vp.main(["--repo-root", str(REPO_ROOT)])
+        self.assertEqual(rc, 0)
+        self.assertIn("OK: validated 6 skills", out.getvalue())
+        self.assertEqual(err.getvalue(), "")
+
+    def test_cli_returns_nonzero_and_writes_stderr_on_invalid_repo(self) -> None:
         with tempfile.TemporaryDirectory() as td:
-            self.assertEqual(vp.main(["--repo-root", td]), 1)
+            out = io.StringIO()
+            err = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                rc = vp.main(["--repo-root", td])
+            self.assertEqual(rc, 1)
+            self.assertEqual(out.getvalue(), "")
+            self.assertIn("ERROR:", err.getvalue())
 
 
 if __name__ == "__main__":

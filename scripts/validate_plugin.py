@@ -10,7 +10,8 @@ import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
-from urllib.parse import unquote
+
+from plugin_frontmatter import extract_relative_links, parse_frontmatter
 
 BODY_HARD_LIMIT_BYTES = 24_000
 BODY_WARN_LIMIT_BYTES = 22_000
@@ -44,14 +45,13 @@ AUTHOR_ALLOWED_KEYS = frozenset({"name", "email", "url"})
 FORBIDDEN_DISPLAY_PREFIXES = ("antigravity", "gemini", "claude", "cursor")
 FORBIDDEN_DISPLAY_SUFFIXES = ("plugin", "plugins", "mcp")
 
-INLINE_CODE_RE = re.compile(r"`[^`\n]+`")
-MD_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
 LOCAL_PATH_RE = re.compile(r"(?<![A-Za-z0-9_])/(?:Users|home)/[^\s\"'`<>)]+")
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("GitHub classic token", re.compile(r"\bghp_[A-Za-z0-9]{20,}\b")),
     ("GitHub fine-grained token", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
     ("API secret key", re.compile(r"\bsk-(?:proj-|live-|test-)?[A-Za-z0-9_-]{16,}\b")),
-    ("age public/secret recipient key", re.compile(r"\bage1[a-z0-9]{50,}\b")),
+    ("age public recipient key", re.compile(r"\bage1[a-z0-9]{50,}\b")),
+    ("age secret key", re.compile(r"\bAGE-SECRET-KEY-1[A-Z0-9]{50,}\b")),
 )
 
 
@@ -73,116 +73,46 @@ def _rel(path: Path, root: Path) -> str:
         return str(path)
 
 
-def _strip_quotes(value: str) -> str:
-    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
-        return value[1:-1]
-    return value
+def _read_utf8(path: Path, root: Path, result: ValidationResult) -> str | None:
+    try:
+        return path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        result.errors.append(f"{_rel(path, root)}: unreadable UTF-8 text ({exc})")
+        return None
 
 
-def _consume_block_scalar(lines: list[str], start: int, indicator: str) -> tuple[str, int]:
-    block: list[str] = []
-    idx = start
-    min_indent: int | None = None
-    while idx < len(lines):
-        raw = lines[idx]
-        if not raw.strip():
-            block.append("")
-            idx += 1
-            continue
-        indent = len(raw) - len(raw.lstrip(" "))
-        if indent == 0:
-            break
-        if min_indent is None or indent < min_indent:
-            min_indent = indent
-        block.append(raw)
-        idx += 1
-
-    cut = min_indent or 0
-    dedented = [line[cut:] if line else "" for line in block]
-    while dedented and dedented[-1] == "":
-        dedented.pop()
-
-    if indicator.startswith(">"):
-        text = " ".join(part.strip() for part in dedented if part.strip())
-    else:
-        text = "\n".join(dedented)
-    return text.strip(), idx
-
-
-def _consume_list(lines: list[str], start: int) -> tuple[list[str], int]:
-    items: list[str] = []
-    idx = start
-    while idx < len(lines):
-        stripped = lines[idx].strip()
-        if not stripped:
-            idx += 1
-            continue
-        if not lines[idx].startswith(" ") or not stripped.startswith("- "):
-            break
-        items.append(_strip_quotes(stripped[2:].strip()))
-        idx += 1
-    return items, idx
-
-
-def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
-    """Parse YAML frontmatter (single-line, quoted, block scalars |/>, lists) and body."""
-    normalized = text.replace("\r\n", "\n")
-    if not normalized.startswith("---\n"):
-        raise ValueError("missing opening YAML frontmatter '---'")
-
-    end = normalized.find("\n---\n", 4)
-    if end == -1:
-        if normalized.endswith("\n---"):
-            end = len(normalized) - 4
-            raw_body = ""
-        else:
-            raise ValueError("missing closing YAML frontmatter '---'")
-    else:
-        raw_body = normalized[end + 5 :]
-
-    meta_lines = normalized[4:end].splitlines()
-    meta: dict[str, Any] = {}
-    idx = 0
-    while idx < len(meta_lines):
-        line = meta_lines[idx]
-        if not line.strip() or line.lstrip().startswith("#"):
-            idx += 1
-            continue
-        if ":" not in line or line.startswith(" "):
-            idx += 1
-            continue
-        key, raw_val = line.split(":", 1)
-        key = key.strip()
-        val = raw_val.strip()
-        if val in {"|", "|-", "|+", ">", ">-", ">+"}:
-            meta[key], idx = _consume_block_scalar(meta_lines, idx + 1, val)
-        elif val == "":
-            meta[key], idx = _consume_list(meta_lines, idx + 1)
-        else:
-            meta[key] = _strip_quotes(val)
-            idx += 1
-
-    body = raw_body.lstrip("\n")
-    return meta, body
-
-
-def _load_json(path: Path, root: Path, result: ValidationResult) -> Any | None:
+def _load_json(
+    path: Path,
+    root: Path,
+    result: ValidationResult,
+    cache: dict[Path, Any] | None = None,
+) -> Any | None:
+    resolved = path.resolve()
+    if cache is not None and resolved in cache:
+        return cache[resolved]
     if not path.exists():
         result.errors.append(f"{_rel(path, root)}: file not found")
+        if cache is not None:
+            cache[resolved] = None
         return None
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        parsed = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         result.errors.append(f"{_rel(path, root)}: invalid JSON ({exc})")
-        return None
+        parsed = None
+    if cache is not None:
+        cache[resolved] = parsed
+    return parsed
 
 
-def validate_json_files(root: Path, result: ValidationResult) -> None:
+def validate_json_files(root: Path, result: ValidationResult) -> dict[Path, Any]:
+    cache: dict[Path, Any] = {}
     for path in sorted(root.rglob("*.json")):
         rel_parts = path.relative_to(root).parts
         if "worktrees" in rel_parts or ".git" in rel_parts:
             continue
-        _load_json(path, root, result)
+        _load_json(path, root, result, cache=cache)
+    return cache
 
 
 def _check_display_name(display_name: Any, rel_path: str, result: ValidationResult) -> None:
@@ -190,14 +120,16 @@ def _check_display_name(display_name: Any, rel_path: str, result: ValidationResu
         result.errors.append(f"{rel_path}: 'displayName' must be a non-empty string")
         return
     tokens = re.findall(r"[A-Za-z0-9]+", display_name.lower())
-    if tokens and tokens[0] in FORBIDDEN_DISPLAY_PREFIXES:
-        result.errors.append(
-            f"{rel_path}: 'displayName' must not start with '{tokens[0]}'"
-        )
-    if tokens and tokens[-1] in FORBIDDEN_DISPLAY_SUFFIXES:
-        result.errors.append(
-            f"{rel_path}: 'displayName' must not end with '{tokens[-1]}'"
-        )
+    if not tokens:
+        return
+    for prefix in FORBIDDEN_DISPLAY_PREFIXES:
+        if tokens[0].startswith(prefix):
+            result.errors.append(f"{rel_path}: 'displayName' must not start with '{prefix}'")
+            break
+    for suffix in FORBIDDEN_DISPLAY_SUFFIXES:
+        if tokens[-1].endswith(suffix):
+            result.errors.append(f"{rel_path}: 'displayName' must not end with '{suffix}'")
+            break
 
 
 def _check_author(author: Any, rel_path: str, result: ValidationResult) -> None:
@@ -213,15 +145,48 @@ def _check_author(author: Any, rel_path: str, result: ValidationResult) -> None:
         result.errors.append(f"{rel_path}: 'author' has disallowed keys: {', '.join(extra)}")
     if not isinstance(author.get("name"), str) or not author["name"].strip():
         result.errors.append(f"{rel_path}: 'author.name' must be a non-empty string")
+    if "email" in author:
+        email = author["email"]
+        if not isinstance(email, str) or not email.strip():
+            result.errors.append(f"{rel_path}: 'author.email' must be a non-empty string")
     url = author.get("url")
     if url is not None and (not isinstance(url, str) or not url.startswith("https://")):
         result.errors.append(f"{rel_path}: 'author.url' must start with https://")
 
 
+def _check_manifest_optional_fields(
+    data: dict[str, Any], rel_path: str, result: ValidationResult
+) -> None:
+    if "suggestedPrompts" in data:
+        prompts = data["suggestedPrompts"]
+        if not isinstance(prompts, list) or not (1 <= len(prompts) <= MAX_SUGGESTED_PROMPTS):
+            result.errors.append(
+                f"{rel_path}: 'suggestedPrompts' must be a list of 1..{MAX_SUGGESTED_PROMPTS} strings"
+            )
+        elif any(not isinstance(p, str) or not p.strip() for p in prompts):
+            result.errors.append(
+                f"{rel_path}: every entry in 'suggestedPrompts' must be a non-empty string"
+            )
+    for url_key in ("repository", "homepage"):
+        if url_key in data:
+            url = data[url_key]
+            if not isinstance(url, str) or not url.startswith("https://"):
+                result.errors.append(f"{rel_path}: '{url_key}' must be an https:// URL")
+    if "author" in data:
+        _check_author(data["author"], rel_path, result)
+    if "keywords" in data:
+        kws = data["keywords"]
+        if not isinstance(kws, list) or any(not isinstance(k, str) or not k.strip() for k in kws):
+            result.errors.append(f"{rel_path}: 'keywords' must be a list of non-empty strings")
+
+
 def validate_antigravity_manifest(
-    manifest_path: Path, root: Path, result: ValidationResult
+    manifest_path: Path,
+    root: Path,
+    result: ValidationResult,
+    cache: dict[Path, Any] | None = None,
 ) -> dict[str, Any] | None:
-    data = _load_json(manifest_path, root, result)
+    data = _load_json(manifest_path, root, result, cache=cache)
     if not isinstance(data, dict):
         if data is not None:
             result.errors.append(f"{_rel(manifest_path, root)}: root must be a JSON object")
@@ -233,124 +198,94 @@ def validate_antigravity_manifest(
         result.errors.append(
             f"{rel_path}: disallowed keys (additionalProperties=false): {', '.join(extra)}"
         )
-
     name = data.get("name")
     if not isinstance(name, str) or not KEBAB_RE.match(name):
         result.errors.append(f"{rel_path}: 'name' must be lowercase kebab-case")
-
     if "displayName" in data:
         _check_display_name(data["displayName"], rel_path, result)
-
     for key in ("version", "description"):
         val = data.get(key)
         if not isinstance(val, str) or not val.strip():
             result.errors.append(f"{rel_path}: '{key}' must be a non-empty string")
     if isinstance(data.get("version"), str) and not SEMVER_RE.match(data["version"]):
         result.errors.append(f"{rel_path}: 'version' must match MAJOR.MINOR.PATCH")
-
-    if "suggestedPrompts" in data:
-        prompts = data["suggestedPrompts"]
-        if not isinstance(prompts, list) or not (1 <= len(prompts) <= MAX_SUGGESTED_PROMPTS):
-            result.errors.append(
-                f"{rel_path}: 'suggestedPrompts' must be a list of 1..{MAX_SUGGESTED_PROMPTS} strings"
-            )
-        elif any(not isinstance(p, str) or not p.strip() for p in prompts):
-            result.errors.append(
-                f"{rel_path}: every entry in 'suggestedPrompts' must be a non-empty string"
-            )
-
-    for url_key in ("repository", "homepage"):
-        if url_key in data:
-            url = data[url_key]
-            if not isinstance(url, str) or not url.startswith("https://"):
-                result.errors.append(f"{rel_path}: '{url_key}' must be an https:// URL")
-
-    if "author" in data:
-        _check_author(data["author"], rel_path, result)
-
-    if "keywords" in data:
-        kws = data["keywords"]
-        if not isinstance(kws, list) or any(not isinstance(k, str) or not k.strip() for k in kws):
-            result.errors.append(f"{rel_path}: 'keywords' must be a list of non-empty strings")
-
+    _check_manifest_optional_fields(data, rel_path, result)
     return data
 
 
+def _extract_doc_version(
+    path: Path,
+    pattern: re.Pattern[str],
+    missing_msg: str,
+    root: Path,
+    result: ValidationResult,
+) -> str | None:
+    if not path.exists():
+        result.errors.append(f"{_rel(path, root)}: file not found")
+        return None
+    text = _read_utf8(path, root, result)
+    if text is None:
+        return None
+    match = pattern.search(text)
+    if not match:
+        result.errors.append(f"{_rel(path, root)}: {missing_msg}")
+        return None
+    return match.group(1)
+
+
 def validate_version_sync(
-    root: Path, agy_manifest: dict[str, Any] | None, result: ValidationResult
+    root: Path,
+    agy_manifest: dict[str, Any] | None,
+    result: ValidationResult,
+    cache: dict[Path, Any] | None = None,
 ) -> None:
     versions: dict[str, str] = {}
 
     claude_path = root / "rp-plugins" / ".claude-plugin" / "plugin.json"
-    claude_data = _load_json(claude_path, root, result)
-    if isinstance(claude_data, dict) and isinstance(claude_data.get("version"), str):
-        versions[_rel(claude_path, root)] = claude_data["version"]
-    else:
-        result.errors.append(f"{_rel(claude_path, root)}: missing string 'version'")
+    claude_data = _load_json(claude_path, root, result, cache=cache)
+    if claude_data is not None:
+        if isinstance(claude_data, dict) and isinstance(claude_data.get("version"), str):
+            versions[_rel(claude_path, root)] = claude_data["version"]
+        else:
+            result.errors.append(f"{_rel(claude_path, root)}: missing string 'version'")
 
     if agy_manifest and isinstance(agy_manifest.get("version"), str):
         versions["rp-plugins/.antigravity-plugin/plugin.json"] = agy_manifest["version"]
 
-    changelog_path = root / "CHANGELOG.md"
-    if not changelog_path.exists():
-        result.errors.append("CHANGELOG.md: file not found")
-    else:
-        match = CHANGELOG_VERSION_RE.search(changelog_path.read_text(encoding="utf-8"))
-        if match:
-            versions["CHANGELOG.md"] = match.group(1)
-        else:
-            result.errors.append("CHANGELOG.md: missing '## [X.Y.Z]' release heading")
+    cl_ver = _extract_doc_version(
+        root / "CHANGELOG.md",
+        CHANGELOG_VERSION_RE,
+        "missing '## [X.Y.Z]' release heading",
+        root,
+        result,
+    )
+    if cl_ver:
+        versions["CHANGELOG.md"] = cl_ver
 
-    readme_path = root / "README.md"
-    if not readme_path.exists():
-        result.errors.append("README.md: file not found")
-    else:
-        match = README_VERSION_RE.search(readme_path.read_text(encoding="utf-8"))
-        if match:
-            versions["README.md"] = match.group(1)
-        else:
-            result.errors.append("README.md: missing '현재 버전 `X.Y.Z`' marker")
+    rm_ver = _extract_doc_version(
+        root / "README.md",
+        README_VERSION_RE,
+        "missing '현재 버전 `X.Y.Z`' marker",
+        root,
+        result,
+    )
+    if rm_ver:
+        versions["README.md"] = rm_ver
 
     if len(set(versions.values())) > 1:
         summary = ", ".join(f"{src}={ver}" for src, ver in versions.items())
         result.errors.append(f"version mismatch across 4 sources: {summary}")
 
 
-def _extract_relative_links(markdown_text: str) -> list[str]:
-    links: list[str] = []
-    in_fence = False
-    fence_char = ""
-    for line in markdown_text.splitlines():
-        stripped = line.lstrip()
-        if not in_fence and (stripped.startswith("```") or stripped.startswith("~~~")):
-            in_fence = True
-            fence_char = stripped[:3]
-            continue
-        if in_fence:
-            if stripped.startswith(fence_char):
-                in_fence = False
-            continue
-        cleaned = INLINE_CODE_RE.sub("", line)
-        for match in MD_LINK_RE.finditer(cleaned):
-            target = match.group(1).strip()
-            if not target:
-                continue
-            target = target.split()[0].strip("<>")
-            if target.startswith(("http://", "https://", "mailto:", "#")):
-                continue
-            target = target.split("#", 1)[0]
-            if target:
-                links.append(unquote(target))
-    return links
-
-
 def validate_markdown_links(
     md_path: Path, plugin_root: Path, root: Path, result: ValidationResult
 ) -> None:
-    text = md_path.read_text(encoding="utf-8")
+    text = _read_utf8(md_path, root, result)
+    if text is None:
+        return
     resolved_plugin = plugin_root.resolve()
     rel_md = _rel(md_path, root)
-    for target in _extract_relative_links(text):
+    for target in extract_relative_links(text):
         resolved = (md_path.parent / target).resolve()
         if not resolved.is_relative_to(resolved_plugin):
             result.errors.append(
@@ -359,6 +294,62 @@ def validate_markdown_links(
             continue
         if not resolved.exists():
             result.errors.append(f"{rel_md}: broken relative link '{target}'")
+
+
+def _validate_single_skill(
+    skill_dir: Path, plugin_root: Path, root: Path, result: ValidationResult
+) -> None:
+    skill_md = skill_dir / "SKILL.md"
+    rel_skill = _rel(skill_md, root)
+    if not skill_md.is_file():
+        result.errors.append(f"{_rel(skill_dir, root)}: missing SKILL.md")
+        return
+
+    text = _read_utf8(skill_md, root, result)
+    if text is None:
+        return
+    try:
+        meta, body = parse_frontmatter(text)
+    except ValueError as exc:
+        result.errors.append(f"{rel_skill}: {exc}")
+        return
+
+    name = meta.get("name")
+    if not isinstance(name, str) or not name:
+        result.errors.append(f"{rel_skill}: missing 'name' in frontmatter")
+    else:
+        if not (1 <= len(name) <= MAX_SKILL_NAME_LEN) or not KEBAB_RE.match(name):
+            result.errors.append(
+                f"{rel_skill}: 'name' must be 1..{MAX_SKILL_NAME_LEN} char kebab-case"
+            )
+        if name != skill_dir.name:
+            result.errors.append(
+                f"{rel_skill}: frontmatter name '{name}' != directory '{skill_dir.name}'"
+            )
+
+    desc = meta.get("description")
+    if not isinstance(desc, str) or not desc.strip():
+        result.errors.append(f"{rel_skill}: missing non-empty 'description' in frontmatter")
+    elif len(desc) > MAX_DESCRIPTION_LEN:
+        result.errors.append(
+            f"{rel_skill}: 'description' length {len(desc)} exceeds {MAX_DESCRIPTION_LEN} chars"
+        )
+
+    body_bytes = len(body.encode("utf-8"))
+    if body_bytes > BODY_HARD_LIMIT_BYTES:
+        result.errors.append(
+            f"{rel_skill}: body is {body_bytes} bytes (limit: {BODY_HARD_LIMIT_BYTES} bytes)"
+        )
+    elif body_bytes > BODY_WARN_LIMIT_BYTES:
+        result.warnings.append(
+            f"{rel_skill}: body is {body_bytes} bytes (approaching {BODY_HARD_LIMIT_BYTES}-byte limit)"
+        )
+
+    validate_markdown_links(skill_md, plugin_root, root, result)
+    ref_dir = skill_dir / "reference"
+    if ref_dir.is_dir():
+        for ref_md in sorted(ref_dir.rglob("*.md")):
+            validate_markdown_links(ref_md, plugin_root, root, result)
 
 
 def validate_skills(root: Path, result: ValidationResult) -> None:
@@ -375,54 +366,7 @@ def validate_skills(root: Path, result: ValidationResult) -> None:
 
     result.skill_count = len(skill_dirs)
     for skill_dir in skill_dirs:
-        skill_md = skill_dir / "SKILL.md"
-        rel_skill = _rel(skill_md, root)
-        if not skill_md.is_file():
-            result.errors.append(f"{_rel(skill_dir, root)}: missing SKILL.md")
-            continue
-
-        try:
-            meta, body = parse_frontmatter(skill_md.read_text(encoding="utf-8"))
-        except ValueError as exc:
-            result.errors.append(f"{rel_skill}: {exc}")
-            continue
-
-        name = meta.get("name")
-        if not isinstance(name, str) or not name:
-            result.errors.append(f"{rel_skill}: missing 'name' in frontmatter")
-        else:
-            if not (1 <= len(name) <= MAX_SKILL_NAME_LEN) or not KEBAB_RE.match(name):
-                result.errors.append(
-                    f"{rel_skill}: 'name' must be 1..{MAX_SKILL_NAME_LEN} char kebab-case"
-                )
-            if name != skill_dir.name:
-                result.errors.append(
-                    f"{rel_skill}: frontmatter name '{name}' != directory '{skill_dir.name}'"
-                )
-
-        desc = meta.get("description")
-        if not isinstance(desc, str) or not desc.strip():
-            result.errors.append(f"{rel_skill}: missing non-empty 'description' in frontmatter")
-        elif len(desc) > MAX_DESCRIPTION_LEN:
-            result.errors.append(
-                f"{rel_skill}: 'description' length {len(desc)} exceeds {MAX_DESCRIPTION_LEN} chars"
-            )
-
-        body_bytes = len(body.encode("utf-8"))
-        if body_bytes > BODY_HARD_LIMIT_BYTES:
-            result.errors.append(
-                f"{rel_skill}: body is {body_bytes} bytes (limit: {BODY_HARD_LIMIT_BYTES} bytes)"
-            )
-        elif body_bytes > BODY_WARN_LIMIT_BYTES:
-            result.warnings.append(
-                f"{rel_skill}: body is {body_bytes} bytes (approaching {BODY_HARD_LIMIT_BYTES}-byte limit)"
-            )
-
-        validate_markdown_links(skill_md, plugin_root, root, result)
-        ref_dir = skill_dir / "reference"
-        if ref_dir.is_dir():
-            for ref_md in sorted(ref_dir.rglob("*.md")):
-                validate_markdown_links(ref_md, plugin_root, root, result)
+        _validate_single_skill(skill_dir, plugin_root, root, result)
 
 
 def _iter_public_artifacts(root: Path) -> list[Path]:
@@ -444,7 +388,7 @@ def validate_public_artifacts_security(root: Path, result: ValidationResult) -> 
     for path in _iter_public_artifacts(root):
         try:
             text = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError:
+        except (OSError, UnicodeDecodeError):
             continue
         rel_path = _rel(path, root)
         for lineno, line in enumerate(text.splitlines(), start=1):
@@ -462,10 +406,10 @@ def validate_public_artifacts_security(root: Path, result: ValidationResult) -> 
 def validate_repo(repo_root: Path) -> ValidationResult:
     root = repo_root.resolve()
     result = ValidationResult()
-    validate_json_files(root, result)
+    json_cache = validate_json_files(root, result)
     agy_path = root / "rp-plugins" / ".antigravity-plugin" / "plugin.json"
-    agy_manifest = validate_antigravity_manifest(agy_path, root, result)
-    validate_version_sync(root, agy_manifest, result)
+    agy_manifest = validate_antigravity_manifest(agy_path, root, result, cache=json_cache)
+    validate_version_sync(root, agy_manifest, result, cache=json_cache)
     validate_skills(root, result)
     validate_public_artifacts_security(root, result)
     return result

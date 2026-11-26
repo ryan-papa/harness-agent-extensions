@@ -118,7 +118,8 @@ python3 -m unittest discover -s tests -v
 harness-agent-extensions/
 ├── .claude-plugin/marketplace.json          # Claude Code 마켓플레이스 선언
 ├── scripts/
-│   └── validate_plugin.py                   # 멀티 프로바이더 정적 검증 (stdlib only)
+│   ├── validate_plugin.py                   # 멀티 프로바이더 정적 검증 (stdlib only)
+│   └── plugin_frontmatter.py                # YAML frontmatter·링크 파서 헬퍼 (stdlib only)
 ├── tests/
 │   └── test_validate_plugin.py              # 정적 검증·회귀 단위 테스트
 └── rp-plugins/

@@ -39,7 +39,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
    - 있으면 캐시를 **원격 최신으로 강제 동기화**(`git fetch origin && git reset --hard origin/<기본브랜치>`, 캐시 없으면 `git clone`) → **레포 모드**. ⛔ 이 동기화 전에는 기존 문서 확인·생성을 시작하지 않는다.
    - 없으면 대상 레포를 한 번 물어본다. 알려주면 저장 후 레포 모드, 원치 않으면 **로컬 모드**(푸시 없음)로 진행. ([`operations.md`](reference/operations.md) §타깃 레포)
 2. **레퍼런스 로드** — `template.html` + `design-rules.md` + `visual-patterns.md`를 Read한다. (매 실행마다)
-3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과(미설치 환경은 `search_web` 등 웹 검색으로 공식 문서·원천 자료 심층 조사)를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다([`operations.md`](reference/operations.md) §옵시디언; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
+3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과(미설치 환경은 `search_web` 등 웹 검색으로 공식 문서·원천 자료 심층 조사)를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다([`operations.md`](reference/operations.md) §옵시디언 지식베이스 적재; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
 4. **기존 문서 확인 (보강/신규)** — 대상 루트(레포 캐시 또는 `<cwd>/docs/decks`)의 `index.html`·기존 덱 메타(title·category·summary)를 스캔해 같은 주제 문서가 있는지 본다. ([`operations.md`](reference/operations.md) §보강 vs 신규)
    - 같은 주제가 **명확**하면 → 그 파일을 **보강** 대상으로.
    - 새 주제가 **명확**하면 → **신규**.
