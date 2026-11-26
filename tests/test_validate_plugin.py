@@ -251,6 +251,33 @@ class ValidatePluginTest(unittest.TestCase):
             self.assertIn("API secret key", joined)
             self.assertIn("age public/secret recipient key", joined)
 
+    def test_rp_deck_split_and_youtube_deck_cross_references(self) -> None:
+        deck_skill = REPO_ROOT / "rp-plugins" / "skills" / "rp-deck" / "SKILL.md"
+        deck_ops = REPO_ROOT / "rp-plugins" / "skills" / "rp-deck" / "reference" / "operations.md"
+        yt_deck_skill = REPO_ROOT / "rp-plugins" / "skills" / "rp-youtube-deck" / "SKILL.md"
+
+        self.assertTrue(deck_ops.is_file())
+        _, body = vp.parse_frontmatter(deck_skill.read_text(encoding="utf-8"))
+        self.assertLessEqual(len(body.encode("utf-8")), 21_000)
+
+        ops_text = deck_ops.read_text(encoding="utf-8")
+        for heading in (
+            "## 타깃 레포",
+            "## 홈 버튼",
+            "## 옵시디언 지식베이스 적재",
+            "## 보강 vs 신규",
+            "## 삭제 모드",
+        ):
+            self.assertIn(heading, ops_text)
+
+        self.assertIn("reference/operations.md", deck_skill.read_text(encoding="utf-8"))
+        self.assertIn("../rp-deck/reference/operations.md", yt_deck_skill.read_text(encoding="utf-8"))
+
+        res = vp.ValidationResult()
+        vp.validate_skills(REPO_ROOT, res)
+        self.assertTrue(res.ok, res.errors)
+        self.assertEqual(res.warnings, [])
+
 
 if __name__ == "__main__":
     unittest.main()

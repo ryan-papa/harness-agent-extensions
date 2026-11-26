@@ -15,6 +15,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 | [`reference/design-rules.md`](reference/design-rules.md) | 독자 기준·구조·전달력·토스 톤·용어 각주·자가 린트 규칙 |
 | [`reference/visual-patterns.md`](reference/visual-patterns.md) | **주제 → 시각 표현 매핑 SSOT.** 스키마·데이터흐름·값 변화·기술 비교·계층 구조를 무엇으로 그릴지 |
 | [`reference/review.md`](reference/review.md) | 독립 서브에이전트 리뷰 프로토콜 (2라운드, 건당 10분 타임아웃, 작성자 셀프리뷰 금지) + **리뷰어 프롬프트 템플릿** |
+| [`reference/operations.md`](reference/operations.md) | **운영·부가 모드 SSOT.** 타깃 레포(`.rp-deck.json`·캐시 동기화)·홈 버튼·옵시디언 적재(거절 영구 저장)·보강/신규 판정·삭제 모드 상세. **워크플로우 1단계 진입 전 및 삭제 모드 진입 즉시 필수 Read** |
 | [`scripts/update_index.py`](scripts/update_index.py) | 덱 트리 스캔 → 게시판 index.html 생성: 좌측 디렉토리 트리(전체+뎁스 중첩) + 우측 리스트, 트리·검색 필터는 임베드 JSON 기반 클라이언트 렌더 (stdlib only) |
 | [`scripts/delete_deck.py`](scripts/delete_deck.py) | 덱 삭제: URL·경로·제목으로 대상 해석 → dry-run 목록 → `--yes` 시 파일 삭제 + 빈 디렉터리 정리 + index 재생성 (stdlib only) |
 | [`scripts/lint_svg.py`](scripts/lint_svg.py) | 인라인 SVG 좌표 린트: 텍스트 겹침(OVERLAP)·viewBox 이탈(CLIP)·왼쪽 여백 이탈(INDENT). 지적 있으면 종료 코드 1 (stdlib only) |
@@ -26,94 +27,20 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 | 없음 | **컨텍스트** | 방금 끝낸 작업/대화를 요약해 장표화 |
 | 파일 경로 (`.md` 등 존재하는 경로) | **파일** | 그 문서를 읽어 장표화 |
 | 그 외 텍스트 | **주제** | `deep-research` 스킬로 조사 후 장표화 |
-| 삭제 지시 (URL·경로·제목 + "지워줘") | **삭제** | 그 덱을 지우고 index 재생성 (§삭제 모드) |
+| 삭제 지시 (URL·경로·제목 + "지워줘") | **삭제** | [`reference/operations.md`](reference/operations.md) §삭제 모드를 즉시 Read해 덱 삭제 + index 재생성 |
 
-## 타깃 레포 (문서 적재 대상)
+## 운영 규칙 (필수 Read)
 
-생성한 문서는 **환경별로 지정한 GitHub 레포**에 적재할 수 있다. 사용 환경이 다르므로, 등록 전에는 대상 레포를 물어본다. **등록은 선택이며, 없으면 로컬에만 생성한다(생성은 항상 해준다).**
-
-- 설정 파일: 실행 프로젝트 루트 `.rp-deck.json` — `{"repo": "...", "obsidian": "...", "home": "..."}`. `repo`는 **`owner/name`(github.com) 또는 전체 URL**(사내 GitHub Enterprise 등 다른 호스트)을 모두 허용. `obsidian`은 vault 경로 또는 `false`(선택, §옵시디언 지식베이스). `home`은 게시판 홈(index.html 배포 위치)의 절대 URL(선택, §홈 버튼).
-- **대상 레포 출처는 오직 둘뿐**: (a) `.rp-deck.json`, (b) 이번 실행에서 사용자가 명시한 답. ⛔ cwd의 git remote·이전 대화·이 문서의 표현·추측 등 **어떤 방법으로도 레포를 유추·자동 지정하지 않는다.** 명시 입력이 없으면 무조건 로컬 모드.
-- **레포 모드 (파일 있음)**: 캐시 `~/.rp-deck/repos/<owner>__<name>`를 **작업 시작 전 원격 최신으로 강제 동기화**한 뒤 문서를 배치·커밋·push한다.
-  - **호스트 일반화**: `repo`가 전체 URL이면 **그 URL로** clone/fetch(`git clone <URL>`), `owner/name`이면 github.com(`gh repo clone`). ⛔ 호스트를 github.com으로 가정하지 않는다. 캐시 경로는 URL/슬러그에서 `<owner>__<name>`을 파싱해 `~/.rp-deck/repos/<owner>__<name>`로.
-  - 없으면 clone. 있으면 `git fetch origin && git reset --hard origin/<기본브랜치>` (기본브랜치는 `git remote show origin`으로 확인, 보통 main).
-  - 캐시는 **원격 SSOT의 읽기 사본** — reset으로 로컬 변경은 버려진다. 그러므로 **각 실행은 커밋 후 push까지 반드시 완료**하고, push 실패 시 중단·보고한다(로컬에만 남기지 않음).
-- **미등록 (파일 없음)**: 대상 레포(`owner/name`)를 한 번 물어본다.
-  - 알려주면 `.rp-deck.json`에 저장하고 레포 모드로 진행.
-  - **원치 않거나 답이 없으면 → 로컬 모드**: `<cwd>/docs/decks/`에 생성·인덱스 갱신만, 푸시 없음. 저장하지 않으므로 다음 실행에서 다시 묻는다.
-- **묻지 않고 임의 레포에 push 금지.**
-
-## 홈 버튼 (설정 시)
-
-덱은 분류 폴더(`<1>/<2>/…/제목.html`) 깊숙이 저장돼 게시판 홈으로 돌아갈 길이 없다. `.rp-deck.json`에 `home`(게시판 홈 절대 URL)이 있으면 각 덱 우하단 카운터 옆에 토스 스타일 홈 버튼을 넣어 한 번에 복귀시킨다.
-
-- **조건**: `.rp-deck.json`의 `home`이 있을 때만. 없으면 홈 버튼 없이 생성한다(별도로 묻지 않는다 — 레포·vault와 달리 선택적 폴리시).
-- **출처 규칙**: `home` 값은 `.rp-deck.json` 또는 이번 실행의 사용자 명시 답, 이 둘로만. ⛔ git remote·이전 대화·추측으로 유추 금지(레포·vault와 동일 철학).
-- **모양·동작**: `template.html`의 `#home`(인라인 SVG 홈 아이콘 + "홈" 반투명 pill)을 그대로 쓴다. `href`=`home` 값, **같은 탭 이동**(`target` 없음). 클릭이 슬라이드 넘김으로 새지 않게 `#home` 클릭 가드가 이미 template JS에 포함돼 있다.
-- **template 처리**: `home` 있으면 `#home`의 href를 그 값으로 치환. `home` 없으면 `<a id="home">` 요소를 삭제한다(`#hud-br`·`#counter`는 유지).
-- **적용 범위**: 이 스킬이 만지는 덱(신규·보강)에 반영. 기존 덱 전체 일괄 백필은 하지 않는다.
-
-## 옵시디언 지식베이스 적재 (topic 모드 전용)
-
-topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **원본 조사 자료를 버리지 않고** 옵시디언 vault에 남긴다. 덱=시각 요약, vault=원본 근거+정리 지식으로 역할을 나눈다.
-
-- **적용 조건**: **topic 모드에서만.** 컨텍스트·파일 모드는 새 조사가 없으므로 건너뛴다.
-- **vault 출처는 레포 타깃과 동일 규칙**: `.rp-deck.json`의 `obsidian` 또는 이번 실행의 사용자 명시 답, 이 둘로만. ⛔ 추측·자동 지정 금지.
-- **⛔ 질문은 평생 한 번 (거절도 저장한다)**: `.rp-deck.json`의 `obsidian` 값으로 3분기 판단한다.
-
-  | `obsidian` 값 | 판단 | 동작 |
-  |---|---|---|
-  | 문자열(vault 경로) | 등록됨 | 그 vault에 적재 |
-  | `false` | **사용자가 거절함** | **묻지 않고 스킵** (덱은 그대로 생성) |
-  | 키 없음 | 미확인 | **딱 한 번** 물어봄 |
-
-  - 물어본 결과 **경로를 알려주면** → `"obsidian": "<경로>"` 저장 후 적재.
-  - **원치 않는다고 하거나 답이 없으면** → `"obsidian": false`를 **즉시 저장**하고 스킵. ⛔ 저장을 생략해 다음 실행에서 다시 묻는 것 금지.
-  - `.rp-deck.json`이 없어 저장할 곳이 없으면 **`{"obsidian": false}`만 담은 파일을 새로 만든다**(레포 미등록 상태와 무관하게 거절은 기록).
-  - **되돌리기**: 사용자가 이번 실행에서 vault 적재를 명시 요청하면 `false`를 무시하고 경로를 물어 덮어쓴다. 이 경우 외에 `false`를 재확인하지 않는다.
-- **⛔ vault의 컨벤션을 따른다 (rp-deck 임의 폴더·형식 금지)**: vault 루트에 `CLAUDE.md`(또는 `README`)가 있으면 **먼저 Read**하고 그 스키마·페이지 형식·폴더 규칙을 그대로 준수한다. rp-deck 고유의 폴더/프론트매터를 강요하지 않는다.
-- **동작 = vault의 Ingest 플로우** (스키마에 정의가 있으면 그 정의 우선, 없으면 아래 기본):
-  1. **원본 보존**: 조사 원문(deep-research 결과 + 수집 발췌·출처 URL)을 `sources/`에 새 파일로 저장. ⛔ 기존 `sources/` 파일은 수정·삭제하지 않는다(출처 무결성).
-  2. **정리 페이지**: 핵심을 `wiki/<도메인>/<토픽>.md`로 생성/갱신(1개념=1페이지). 도메인은 **덱 카테고리와 대응**(backend/spring·data·infra·frontend·mobile·testing …).
-  3. **연결**: 관련 페이지에 `[[위키링크]]`로 상호 연결.
-  4. **카탈로그·로그**: `index.md` 갱신, `log.md` 맨 위에 `## [YYYY-MM-DD] ingest | 제목` append.
-- **보강 우선**: vault에 같은 토픽 페이지가 있으면 새로 만들지 말고 갱신한다(모순은 명시).
-- **⛔ 민감정보 금지**: 내부 호스트·포트·인증서 경로·IP·시크릿은 vault에 기록하지 않는다(동기화 vault 유출 방지).
-
-## 보강 vs 신규
-
-생성 전, 대상 루트에 **같은 주제 문서가 이미 있는지** 확인해 보강할지 새로 만들지 판단한다.
-
-- 판단 근거: 기존 덱의 `title` + `category`(분류 경로) + `summary`(meta) **종합 유사도**, 그리고 내용까지 보고 최종 결정. 파일명·경로 단독 일치만으로 판단하지 않는다.
-- **보강**: 같은 주제가 명확할 때. 기존 파일을 그 자리에서 편집(슬라이드 추가·수정), meta date만 오늘로, 파일명·경로 유지.
-- **신규**: 새 주제가 명확할 때. 새 파일 생성.
-- **애매**(부분 겹침 등): 사용자에게 보강/신규를 물어본다. 명확하면 묻지 않고 자동 진행하되, 어느 쪽인지 진행 중 한 줄로 알린다.
-
-## 삭제 모드
-
-올린 장표를 내리는 일도 생성만큼 자주 있다. 덱 파일을 지우고 `index.html`을 다시 만들어 목록·트리에서 함께 사라지게 한다. [`scripts/delete_deck.py`](scripts/delete_deck.py)가 대상 해석·삭제·빈 디렉터리 정리·인덱스 재생성을 한 번에 처리한다.
-
-- **대상 지정 3종**: 라이브 URL(퍼센트 인코딩 자동 해제) · 대상 루트 기준 상대 경로 · 제목/경로 키워드. 여러 건을 한 번에 넘긴다.
-- **⛔ 확인 1회 필수**: 먼저 `--yes` 없이 실행해 지울 목록(제목·경로)을 사용자에게 보여주고, 동의를 받은 뒤 `--yes`로 다시 실행한다. 확인 없이 바로 지우지 않는다.
-- **모호·미매칭이면 중단**: 키워드가 여러 덱에 걸리거나 하나도 안 걸리면 스크립트가 후보를 출력하고 종료 코드 2로 끝낸다(아무것도 지우지 않음). 후보를 그대로 보여주고 어느 것인지 물어 경로로 다시 지정한다.
-- **옵시디언은 건드리지 않는다**: 덱=시각 요약, vault=원본 근거로 역할이 다르므로 `sources/`·`wiki/` 노트는 남긴다. (§옵시디언)
-
-### 워크플로우 (삭제)
-
-1. **타깃 레포 확인·최신화** — 생성과 동일(§워크플로우 1). 로컬 모드는 `<cwd>/docs/decks`가 대상 루트.
-2. **대상 해석·목록 제시** — `python3 <스킬경로>/scripts/delete_deck.py <대상 루트> <대상...>`(dry-run). 출력된 제목·경로를 그대로 사용자에게 보여준다.
-3. **확인 후 삭제** — 동의하면 같은 명령에 `--yes`를 붙여 실행(삭제 + 빈 디렉터리 정리 + index 재생성).
-4. **적재 (레포 모드만)** — `git add -A` → 커밋(`docs(deck): 장표 N건 삭제`) → `git push`. push 성공까지 확인하고, 실패하면 중단·보고.
-5. **보고** — 지운 제목·건수와 남은 덱 수를 한 줄로. (리뷰·오픈 단계는 없다)
+일반 워크플로우 1단계(타깃 레포 확인) 진입 전 및 삭제 모드 진입 즉시 [`reference/operations.md`](reference/operations.md)를 Read한다 — 타깃 레포(`.rp-deck.json`·캐시 동기화)·홈 버튼·옵시디언 적재(거절 `false` 영구 저장)·보강/신규 판정·삭제 모드(dry-run 확인 1회 필수)의 상세 SSOT다.
 
 ## 워크플로우
 
-1. **타깃 레포 확인·최신화** — `.rp-deck.json`을 읽는다.
+1. **타깃 레포 확인·최신화** — [`reference/operations.md`](reference/operations.md)를 먼저 Read하고 `.rp-deck.json`을 읽는다.
    - 있으면 캐시를 **원격 최신으로 강제 동기화**(`git fetch origin && git reset --hard origin/<기본브랜치>`, 캐시 없으면 `git clone`) → **레포 모드**. ⛔ 이 동기화 전에는 기존 문서 확인·생성을 시작하지 않는다.
-   - 없으면 대상 레포를 한 번 물어본다. 알려주면 저장 후 레포 모드, 원치 않으면 **로컬 모드**(푸시 없음)로 진행. (§타깃 레포)
+   - 없으면 대상 레포를 한 번 물어본다. 알려주면 저장 후 레포 모드, 원치 않으면 **로컬 모드**(푸시 없음)로 진행. ([`operations.md`](reference/operations.md) §타깃 레포)
 2. **레퍼런스 로드** — `template.html` + `design-rules.md` + `visual-patterns.md`를 Read한다. (매 실행마다)
-3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다(§옵시디언; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
-4. **기존 문서 확인 (보강/신규)** — 대상 루트(레포 캐시 또는 `<cwd>/docs/decks`)의 `index.html`·기존 덱 메타(title·category·summary)를 스캔해 같은 주제 문서가 있는지 본다. (§보강 vs 신규)
+3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다([`operations.md`](reference/operations.md) §옵시디언; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
+4. **기존 문서 확인 (보강/신규)** — 대상 루트(레포 캐시 또는 `<cwd>/docs/decks`)의 `index.html`·기존 덱 메타(title·category·summary)를 스캔해 같은 주제 문서가 있는지 본다. ([`operations.md`](reference/operations.md) §보강 vs 신규)
    - 같은 주제가 **명확**하면 → 그 파일을 **보강** 대상으로.
    - 새 주제가 **명확**하면 → **신규**.
    - **애매하면** 사용자에게 보강/신규를 물어본다. (명확하면 자동, 결정은 다음 단계 진행 중 한 줄로 알림)
@@ -141,7 +68,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
    - 낯선 전문용어는 그 슬라이드 하단에 `.gloss` 각주로 짧게 설명한다. 약어는 풀텍스트 병기. **`.gloss`를 넣은 `<section>`에는 `has-gloss` 클래스를 함께 붙여** 본문과 겹치지 않게 한다. ([`design-rules.md`](reference/design-rules.md) §8)
    - `<meta name="deck-*">` 4종(title/date/category/summary)을 채운다(보강 시 date만 갱신).
    - `#counter`·`slides.length`는 실제 장 수에 맞춘다.
-   - **홈 버튼**: `.rp-deck.json`에 `home`이 있으면 `#home`의 href를 그 값으로 채운다(같은 탭). 없으면 `<a id="home">`를 삭제한다. 보강 시 기존 덱에 `#home`(및 `#hud-br`)이 없고 `home`이 설정돼 있으면 우하단 HUD를 현재 `template.html` 구조(`#hud-br` > `#home` + `#counter`)로 맞춰 홈 버튼을 추가한다. (§홈 버튼)
+   - **홈 버튼**: `.rp-deck.json`에 `home`이 있으면 `#home`의 href를 그 값으로 채운다(같은 탭). 없으면 `<a id="home">`를 삭제한다. 보강 시 기존 덱에 `#home`(및 `#hud-br`)이 없고 `home`이 설정돼 있으면 우하단 HUD를 현재 `template.html` 구조(`#hud-br` > `#home` + `#counter`)로 맞춰 홈 버튼을 추가한다. ([`operations.md`](reference/operations.md) §홈 버튼)
 7. **자동 분류 (신규만)** — 내용을 보고 최대 4레벨 경로를 정한다. 보강은 기존 경로를 그대로 유지한다.
    - 1레벨: 대분류(기술 / 기획 / 운영 …)
    - 2레벨: 세부(백엔드 / 프론트 …) · 3레벨: 스택/영역(스프링 …) · 4레벨: 선택
@@ -152,7 +79,7 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
     - 손으로 그린 인라인 SVG가 있으면 `python3 <스킬경로>/scripts/lint_svg.py <생성한 HTML>`을 돌린다. **OVERLAP·NODE_OVERLAP·CLIP은 반드시 0건으로 고치고**, INDENT는 계층 표현인지 판단해 채택·보류한다([`visual-patterns.md`](reference/visual-patterns.md) §8).
 11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **진입 런타임의 새 서브에이전트**에 [`review.md`](reference/review.md) §3 프롬프트 템플릿을 그대로 넘겨 10개 항목 평가를 받는다(⛔ 매번 프롬프트를 새로 짓지 않는다). **호출 1건당 10분 상한**을 프롬프트에 명시하고, 초과하면 1줄 기록 후 스킵·재시도 없음. 수정 후 §4를 덧붙여 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료.
 12. **적재 (레포 모드만)** — 캐시에서 `git add -A` → 커밋 → `git push`. **push 성공까지 확인**하고, 실패하면 중단·보고(로컬에만 커밋 남기지 않음). 로컬 모드는 건너뛴다.
-13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. (§옵시디언 지식베이스)
+13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. ([`operations.md`](reference/operations.md) §옵시디언 지식베이스 적재)
 14. **오픈** — 생성/보강된 HTML을 `open`으로 실행. 대상(레포/로컬)·경로·장 수·**보강/신규 여부**·**옵시디언 적재 여부**를 한 줄로 보고.
 
 ## 절대 규칙
@@ -166,10 +93,9 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 - **헤드라인에 대상 이름 필수** — 무슨 기술·제품 이야기인지 헤드라인 안에 넣어 **제목만 봐도 주제가 잡히게** 한다. 대명사·추상어("이것","성능","구조")로 끝내지 않는다. ([`design-rules.md`](reference/design-rules.md) §2)
 - **주제별 시각 표현은 매핑표를 따른다** — 데이터 저장(스키마)·흐름·값 변화·기술 비교·계층 구조는 [`visual-patterns.md`](reference/visual-patterns.md) §2가 지정한 전용 컴포넌트로 그린다. **그림 없는 슬라이드가 연속 3장을 넘지 않는다.** 다이어그램에는 추상 라벨 대신 실제 컬럼명·값을 넣는다.
 - **용어 각주** — 낯선 용어는 슬라이드 하단에 짧게 설명(슬라이드당 2~5개, 필요하면 더, 약어는 풀텍스트 병기, 네 줄 이내). `.gloss` 쓰는 `<section>`에 `has-gloss` 클래스 필수.
-- **타깃 레포는 명시 입력만 인정** — 대상 레포는 `.rp-deck.json` 또는 이번 실행의 사용자 명시 답, 이 둘로만 정한다. ⛔ git remote·대화 맥락·추측으로 레포를 유추·자동 지정 금지. 명시 입력이 없으면 대상을 한 번 물어보고, 답이 없으면 **로컬에만 생성(푸시 없음)** — 생성 자체는 항상 해준다.
-- **홈 버튼도 명시 설정만** — 홈 링크는 `.rp-deck.json`의 `home` 또는 이번 실행의 사용자 명시만 인정. ⛔ git remote·추측으로 유추 금지. 있으면 이 스킬이 만지는 덱(신규·보강) 우하단에 `#home` 버튼(href=home, 같은 탭)을 넣고, 없으면 홈 버튼 없이 생성(묻지 않음). (§홈 버튼)
-- **생성 전 기존 문서 확인** — 대상 루트에 같은 주제가 있으면 보강, 없으면 신규. 애매하면 물어본다. 조용히 덮어쓰지 않는다.
-- **⛔ 삭제는 확인 1회 필수** — 덱 삭제는 라이브 페이지가 사라지는 동작이다. `delete_deck.py`를 먼저 dry-run으로 돌려 지울 목록을 보여주고 동의를 받은 뒤에만 `--yes`. 대상이 모호하거나 없으면 지우지 말고 후보를 물어본다. 파일 삭제·index 재생성은 손으로 하지 말고 이 스크립트로. ⛔ 옵시디언 노트는 함께 지우지 않는다. (§삭제 모드)
+- **타깃 레포·홈 버튼·vault는 명시 입력만 인정** — `.rp-deck.json` 또는 이번 실행 사용자 명시 답만 사용. ⛔ git remote·대화 맥락·추측 유추 금지. 레포 미등록 시 로컬(`<cwd>/docs/decks`) 생성. ([`operations.md`](reference/operations.md) §타깃 레포·§홈 버튼)
+- **생성 전 기존 문서 확인** — 같은 주제면 보강, 새 주제면 신규, 애매하면 질문. ([`operations.md`](reference/operations.md) §보강 vs 신규)
+- **⛔ 삭제는 확인 1회 필수** — `delete_deck.py` dry-run 제시·동의 후 `--yes` 실행. 모호·미매칭이면 중단, 옵시디언 노트는 유지. ([`operations.md`](reference/operations.md) §삭제 모드)
 - **독립 리뷰 필수** — 생성·보강 후 push 전, **작성 에이전트가 아닌 진입 런타임의 새 서브에이전트**가 [`review.md`](reference/review.md) §3 템플릿으로 평가한다. ⛔ 작성자 셀프리뷰 금지, ⛔ 교차 런타임 리뷰 금지, 상한 2라운드, **호출 건당 상한 10분**(⛔ 연장·재시도 금지 — 초과 시 비차단 스킵).
 - **시각 요소 병기** — 시각화를 넣어도 설명 텍스트·용어 각주를 줄이지 않는다. 시각 요소는 텍스트를 대체하지 않고 함께 둔다.
 - **비교·수치는 표와 차트로** — 항목이 둘 이상 비교되면 문장 대신 표, 실측치가 2개 이상이면 차트, 계산으로 유도되는 값은 공식으로 옮긴다. 수치를 문장 안에 흘려보내지 않는다. ([`design-rules.md`](reference/design-rules.md) §3)
@@ -177,10 +103,8 @@ topic(주제) 모드는 조사(`deep-research`·웹 검색)를 한다 — 그 **
 - **코드는 복붙 가능해야 한다** — 생성자·필드·import가 빠져 컴파일되지 않는 예제 금지. 줄였으면 `.cmt`에 명시. **캡션이 주장하는 동작은 그 장 코드에 실제로 보여야** 하고, 앞 장의 판정과 뒤 장의 해법이 모순되면 안 된다. 단정 앞에는 반례를 확인하고, 인용한 사례엔 출처와 결말을 적는다. ([`design-rules.md`](reference/design-rules.md) §11)
 - **720px를 넘기지 않는다** — 설계 단계에서 높이 예산으로 더해보고, 만든 뒤 실제로 확인한다. 넘치면 눌리지 않고 잘린다. ([`visual-patterns.md`](reference/visual-patterns.md) §7)
 - **손으로 그린 SVG는 블록 좌단이 x=0** — `viewBox="0 0 1104 H"`를 쓰면 x=0이 헤드라인 왼쪽 끝과 맞는다. 라벨 열을 오른쪽 맞춤할 땐 **가장 긴 라벨이 x=0**에 오게 앵커를 잡는다(짧은 라벨을 넉넉한 앵커에 붙이면 왼쪽이 이유 없이 빈다). 인접 `<text>`의 y 간격은 글자 크기 + 8 이상, 박스끼리 걸치기 금지(품는 건 정상), viewBox 밖 이탈 금지. push 전 `lint_svg.py`로 OVERLAP·NODE_OVERLAP·CLIP 0건 확인. ([`visual-patterns.md`](reference/visual-patterns.md) §8)
-- **작업 전 원격 최신화 필수 (레포 모드)** — 기존 문서 확인·생성 전에 캐시를 `fetch`+`reset --hard origin/<기본브랜치>`로 원격 최신에 맞춘다(stale 캐시로 판단 금지). 각 실행은 push까지 완료.
-- **레포 호스트 일반화** — `repo`는 `owner/name`(github.com)과 전체 URL(사내 GitHub Enterprise 등 다른 호스트)을 모두 허용. ⛔ github.com으로 가정하지 말고, 전체 URL이면 그 URL로 clone/fetch·링크한다.
-- **옵시디언은 topic 모드만·vault 컨벤션 준수** — 조사 원본은 vault `sources/`에 보존하고 정리는 `wiki/`에. vault `CLAUDE.md` 스키마를 먼저 읽어 그대로 따르고, rp-deck 임의 폴더/형식을 강요하지 않는다. 타깃은 명시 입력만 인정. ⛔ 민감정보 기록 금지.
-- **⛔ vault 질문은 평생 한 번** — `obsidian`이 `false`면 거절이 확정된 상태다. **다시 묻지 않고 조용히 스킵**한다. 키가 없을 때만 한 번 묻고, 거절·무응답이면 `"obsidian": false`를 **즉시 `.rp-deck.json`에 저장**한다(파일이 없으면 새로 생성). 사용자가 명시로 다시 요청할 때만 덮어쓴다. (§옵시디언 지식베이스)
+- **작업 전 원격 최신화·호스트 일반화·push 완료** — 레포 모드는 작업 전 캐시를 원격 최신으로 강제 동기화(`fetch`+`reset --hard`)하고, 전체 URL이면 그 호스트 그대로 쓰며(github.com 가정 금지), 커밋 후 push까지 완료한다. ([`operations.md`](reference/operations.md) §타깃 레포)
+- **옵시디언은 topic 모드만·vault 컨벤션·질문 평생 한 번** — 원본 `sources/`·정리 `wiki/` 적재, vault 규칙 파일 스키마 우선, 민감정보 금지. `obsidian: false`면 다시 묻지 않고 스킵, 거절 시 `"obsidian": false` 즉시 저장. ([`operations.md`](reference/operations.md) §옵시디언 지식베이스 적재)
 
 ## 확장
 

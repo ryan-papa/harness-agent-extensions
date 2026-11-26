@@ -30,16 +30,16 @@ description: 유튜브 링크 하나로 영상 분석 → 원천 검증 조사 �
 
 ## 워크플로우
 
-1. **타깃 레포 확인·최신화** — `rp-deck` §워크플로우 1과 동일. `.rp-deck.json`을 읽고 캐시를 원격 최신으로 강제 동기화한다. ⛔ 이 동기화 전에 생성을 시작하지 않는다.
+1. **타깃 레포 확인·최신화** — `rp-deck` [`operations.md`](../rp-deck/reference/operations.md) §타깃 레포 및 `rp-deck` §워크플로우 1과 동일. `.rp-deck.json`을 읽고 캐시를 원격 최신으로 강제 동기화한다. ⛔ 이 동기화 전에 생성을 시작하지 않는다.
 2. **영상 분석** — `rp-youtube`를 그 SKILL.md대로 실행한다(전사본 확보 → 전문 Read → **STT 정규화** → 구조 복원 → 분석). 접근 불가(멤버십 등)·자막 없음이면 **여기서 중단**하고 사유를 알린다. ⛔ 장표를 억지로 만들지 않는다.
 3. **원천 검증·보강 조사** — §원천 검증.
-4. **레퍼런스 로드** — `rp-deck`의 `template.html` + `design-rules.md` + `visual-patterns.md`를 Read한다. (매 실행)
-5. **기존 문서 확인 (보강/신규)** — `rp-deck` §보강 vs 신규. 같은 영상·같은 주제 덱이 이미 있으면 보강한다.
+4. **레퍼런스 로드** — `rp-deck`의 [`template.html`](../rp-deck/reference/template.html) + [`design-rules.md`](../rp-deck/reference/design-rules.md) + [`visual-patterns.md`](../rp-deck/reference/visual-patterns.md) + [`operations.md`](../rp-deck/reference/operations.md)를 Read한다. (매 실행)
+5. **기존 문서 확인 (보강/신규)** — [`../rp-deck/reference/operations.md`](../rp-deck/reference/operations.md) §보강 vs 신규. 같은 영상·같은 주제 덱이 이미 있으면 보강한다.
 6. **설계·생성** — `rp-deck` §워크플로우 5~8을 따르되 §장표 추가 요건을 함께 지킨다.
 7. **인덱스·린트·독립 리뷰** — `rp-deck` §워크플로우 9~11 그대로. 리뷰는 **작성자가 아닌 진입 런타임의 새 서브에이전트**로 2라운드, 건당 10분 상한.
 8. **영상 흔적 점검** — §영상 흔적 지우기의 표를 기준으로 슬라이드 본문을 훑는다. `youtube`·`youtu.be`·`[0-9][0-9]:[0-9][0-9]`·"영상"·"강의"·"채널"·"자막"을 검색해 남은 것이 없는지 확인한다. ⛔ `<head>` 메타는 대상이 아니다. **이 점검을 통과하기 전에는 push하지 않는다.**
 9. **적재** — `rp-deck` §워크플로우 12. 커밋 → **push 성공까지 확인**. 실패 시 중단·보고.
-10. **옵시디언 Ingest** — 이 스킬은 **항상 조사를 동반하므로 topic 모드로 취급**한다. `rp-deck` §옵시디언 규칙 그대로(`obsidian: false`면 묻지 않고 스킵, 키 없으면 딱 한 번 질문). `sources/`에 **전사본과 원천 대조표를 함께** 남긴다.
+10. **옵시디언 Ingest** — 이 스킬은 **항상 조사를 동반하므로 topic 모드로 취급**한다. [`../rp-deck/reference/operations.md`](../rp-deck/reference/operations.md) §옵시디언 지식베이스 적재 규칙 그대로(`obsidian: false`면 묻지 않고 스킵, 키 없으면 딱 한 번 질문). `sources/`에 **전사본과 원천 대조표를 함께** 남긴다.
 11. **오픈·보고** — 생성 HTML을 `open`. 영상 제목·장 수·검증 건수·불일치 건수·적재 위치를 한 줄로 보고한다. (터미널 보고에는 영상 정보를 그대로 쓴다 — 감추는 대상은 게시되는 장표뿐이다.)
 
 ## 원천 검증
