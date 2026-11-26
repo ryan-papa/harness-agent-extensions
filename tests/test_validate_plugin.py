@@ -309,6 +309,10 @@ class ValidatePluginTest(unittest.TestCase):
         self.assertEqual(res.skill_count, 6)
         self.assertEqual(vp.main(["--repo-root", str(REPO_ROOT)]), 0)
 
+    def test_cli_returns_nonzero_on_invalid_repo(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            self.assertEqual(vp.main(["--repo-root", td]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
