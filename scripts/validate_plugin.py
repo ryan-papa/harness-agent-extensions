@@ -11,7 +11,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from plugin_frontmatter import extract_relative_links, parse_frontmatter
+try:
+    from plugin_frontmatter import extract_relative_links, parse_frontmatter
+except ImportError:
+    try:
+        from scripts.plugin_frontmatter import extract_relative_links, parse_frontmatter
+    except ImportError:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from plugin_frontmatter import extract_relative_links, parse_frontmatter
+
+_JSON_LOAD_ERROR = object()
 
 BODY_HARD_LIMIT_BYTES = 24_000
 BODY_WARN_LIMIT_BYTES = 22_000
@@ -86,20 +95,20 @@ def _load_json(
     root: Path,
     result: ValidationResult,
     cache: dict[Path, Any] | None = None,
-) -> Any | None:
+) -> Any:
     resolved = path.resolve()
     if cache is not None and resolved in cache:
         return cache[resolved]
     if not path.exists():
         result.errors.append(f"{_rel(path, root)}: file not found")
         if cache is not None:
-            cache[resolved] = None
-        return None
+            cache[resolved] = _JSON_LOAD_ERROR
+        return _JSON_LOAD_ERROR
     try:
         parsed = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
         result.errors.append(f"{_rel(path, root)}: invalid JSON ({exc})")
-        parsed = None
+        parsed = _JSON_LOAD_ERROR
     if cache is not None:
         cache[resolved] = parsed
     return parsed
@@ -187,9 +196,10 @@ def validate_antigravity_manifest(
     cache: dict[Path, Any] | None = None,
 ) -> dict[str, Any] | None:
     data = _load_json(manifest_path, root, result, cache=cache)
+    if data is _JSON_LOAD_ERROR:
+        return None
     if not isinstance(data, dict):
-        if data is not None:
-            result.errors.append(f"{_rel(manifest_path, root)}: root must be a JSON object")
+        result.errors.append(f"{_rel(manifest_path, root)}: root must be a JSON object")
         return None
 
     rel_path = _rel(manifest_path, root)
@@ -243,7 +253,7 @@ def validate_version_sync(
 
     claude_path = root / "rp-plugins" / ".claude-plugin" / "plugin.json"
     claude_data = _load_json(claude_path, root, result, cache=cache)
-    if claude_data is not None:
+    if claude_data is not _JSON_LOAD_ERROR:
         if isinstance(claude_data, dict) and isinstance(claude_data.get("version"), str):
             versions[_rel(claude_path, root)] = claude_data["version"]
         else:

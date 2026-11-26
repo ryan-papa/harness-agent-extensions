@@ -66,12 +66,12 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any], str]:
     """Parse YAML frontmatter (single-line, quoted, block scalars |/>, lists) and body."""
     normalized = text.replace("\r\n", "\n")
     raw_lines = normalized.splitlines(keepends=True)
-    if not raw_lines or raw_lines[0].strip() != "---":
+    if not raw_lines or raw_lines[0].rstrip() != "---":
         raise ValueError("missing opening YAML frontmatter '---'")
 
     close_idx: int | None = None
     for idx in range(1, len(raw_lines)):
-        if raw_lines[idx].strip() == "---":
+        if raw_lines[idx].rstrip() == "---":
             close_idx = idx
             break
     if close_idx is None:

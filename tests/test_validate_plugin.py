@@ -112,6 +112,19 @@ class ValidatePluginTest(unittest.TestCase):
             self.assertEqual(len(json_errs), 1, res.errors)
             self.assertFalse(any("missing string 'version'" in e for e in res.errors), res.errors)
 
+    def test_json_null_manifests_rejected(self) -> None:
+        for target_file, expected_msg in (
+            ("rp-plugins/.antigravity-plugin/plugin.json", "root must be a JSON object"),
+            ("rp-plugins/.claude-plugin/plugin.json", "missing string 'version'"),
+        ):
+            with self.subTest(target=target_file), tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                _make_valid_repo(root)
+                (root / target_file).write_text("null\n", encoding="utf-8")
+                res = vp.validate_repo(root)
+                self.assertFalse(res.ok)
+                self.assertTrue(any(expected_msg in e for e in res.errors), res.errors)
+
     def test_antigravity_manifest_schema_rules(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -141,6 +154,16 @@ class ValidatePluginTest(unittest.TestCase):
             self.assertIn("'author' has disallowed keys", joined)
             self.assertIn("'author.email' must be a non-empty string", joined)
             self.assertIn("'author.url' must start with https://", joined)
+
+            # Upper bound (> 3 suggestedPrompts) also rejected
+            _make_valid_repo(root / "upper")
+            upper_path = root / "upper" / "rp-plugins" / ".antigravity-plugin" / "plugin.json"
+            upper_data = json.loads(upper_path.read_text(encoding="utf-8"))
+            upper_data["suggestedPrompts"] = ["a", "b", "c", "d"]
+            upper_path.write_text(json.dumps(upper_data), encoding="utf-8")
+            res_upper = vp.validate_repo(root / "upper")
+            self.assertFalse(res_upper.ok)
+            self.assertTrue(any("suggestedPrompts" in e for e in res_upper.errors), res_upper.errors)
 
     def test_four_way_version_mismatch_detected(self) -> None:
         for target_file in (
@@ -191,6 +214,35 @@ class ValidatePluginTest(unittest.TestCase):
         empty_meta, empty_body = vp.parse_frontmatter("---\n---\nHello\n")
         self.assertEqual(empty_meta, {})
         self.assertEqual(empty_body, "Hello\n")
+
+        # Indented '---' inside a block scalar must NOT close frontmatter prematurely
+        indented_hr = (
+            "---\n"
+            "name: sample-skill\n"
+            "description: |\n"
+            "  line one\n"
+            "  ---\n"
+            "  line two\n"
+            "---\n\n"
+            "Body\n"
+        )
+        hr_meta, hr_body = vp.parse_frontmatter(indented_hr)
+        self.assertEqual(hr_meta["description"], "line one\n---\nline two")
+        self.assertEqual(hr_body, "Body\n")
+
+        # Name != directory mismatch and empty block-scalar description fail
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _make_valid_repo(root)
+            (root / "rp-plugins" / "skills" / "rp-demo" / "SKILL.md").write_text(
+                "---\nname: wrong-name\ndescription: |\n\n---\n\n# Body\n",
+                encoding="utf-8",
+            )
+            res_mismatch = vp.validate_repo(root)
+            self.assertFalse(res_mismatch.ok)
+            joined_mismatch = "\n".join(res_mismatch.errors)
+            self.assertIn("frontmatter name 'wrong-name' != directory 'rp-demo'", joined_mismatch)
+            self.assertIn("missing non-empty 'description'", joined_mismatch)
 
         # Name (64 vs 65) and description (1024 vs 1025) boundaries + unreadable UTF-8
         with tempfile.TemporaryDirectory() as td:
