@@ -302,6 +302,13 @@ class ValidatePluginTest(unittest.TestCase):
         self.assertNotIn("Agent", recap_meta.get("allowed-tools", []))
         self.assertIn("/tmp", recap_body)
 
+    def test_actual_repo_passes_validation_and_cli(self) -> None:
+        res = vp.validate_repo(REPO_ROOT)
+        self.assertTrue(res.ok, res.errors)
+        self.assertEqual(res.warnings, [], res.warnings)
+        self.assertEqual(res.skill_count, 6)
+        self.assertEqual(vp.main(["--repo-root", str(REPO_ROOT)]), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

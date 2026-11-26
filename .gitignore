@@ -3,6 +3,7 @@ docs/decks/
 
 # 도구 부산물
 .gstack/
+worktrees/
 __pycache__/
 *.pyc
 

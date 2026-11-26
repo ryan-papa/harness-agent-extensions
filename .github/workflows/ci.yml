@@ -34,3 +34,9 @@ jobs:
         run: |
           files=$(git ls-files '*.py')
           [ -z "$files" ] || python3 -m py_compile $files
+
+      - name: 플러그인 정적 검증 (Antigravity·4자 버전·24KB·링크·보안)
+        run: python3 scripts/validate_plugin.py
+
+      - name: 단위 테스트
+        run: python3 -m unittest discover -s tests -v
