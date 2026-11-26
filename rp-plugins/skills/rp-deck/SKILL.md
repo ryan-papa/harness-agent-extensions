@@ -26,7 +26,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
 |------|------|------|
 | 없음 | **컨텍스트** | 방금 끝낸 작업/대화를 요약해 장표화 |
 | 파일 경로 (`.md` 등 존재하는 경로) | **파일** | 그 문서를 읽어 장표화 |
-| 그 외 텍스트 | **주제** | `deep-research` 스킬로 조사 후 장표화 |
+| 그 외 텍스트 | **주제** | `deep-research` 스킬(미설치 환경은 `search_web` 등 웹 검색 도구)로 조사 후 장표화 |
 | 삭제 지시 (URL·경로·제목 + "지워줘") | **삭제** | [`reference/operations.md`](reference/operations.md) §삭제 모드를 즉시 Read해 덱 삭제 + index 재생성 |
 
 ## 운영 규칙 (필수 Read)
@@ -39,7 +39,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
    - 있으면 캐시를 **원격 최신으로 강제 동기화**(`git fetch origin && git reset --hard origin/<기본브랜치>`, 캐시 없으면 `git clone`) → **레포 모드**. ⛔ 이 동기화 전에는 기존 문서 확인·생성을 시작하지 않는다.
    - 없으면 대상 레포를 한 번 물어본다. 알려주면 저장 후 레포 모드, 원치 않으면 **로컬 모드**(푸시 없음)로 진행. ([`operations.md`](reference/operations.md) §타깃 레포)
 2. **레퍼런스 로드** — `template.html` + `design-rules.md` + `visual-patterns.md`를 Read한다. (매 실행마다)
-3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다([`operations.md`](reference/operations.md) §옵시디언; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
+3. **입력 수집** — 모드 판별 후 원문 확보. 주제 모드는 `deep-research` 실행 결과(미설치 환경은 `search_web` 등 웹 검색으로 공식 문서·원천 자료 심층 조사)를 원문으로 삼고, **조사 원본을 옵시디언에 남기므로 vault 타깃도 확인**한다([`operations.md`](reference/operations.md) §옵시디언; `obsidian`이 `false`면 **묻지 않고 스킵**, 키가 없을 때만 한 번 물어보고 거절 시 `false` 저장).
 4. **기존 문서 확인 (보강/신규)** — 대상 루트(레포 캐시 또는 `<cwd>/docs/decks`)의 `index.html`·기존 덱 메타(title·category·summary)를 스캔해 같은 주제 문서가 있는지 본다. ([`operations.md`](reference/operations.md) §보강 vs 신규)
    - 같은 주제가 **명확**하면 → 그 파일을 **보강** 대상으로.
    - 새 주제가 **명확**하면 → **신규**.
@@ -79,7 +79,7 @@ description: 작업 산출물·문서·주제를 토스 스타일 HTML 슬라이
     - 손으로 그린 인라인 SVG가 있으면 `python3 <스킬경로>/scripts/lint_svg.py <생성한 HTML>`을 돌린다. **OVERLAP·NODE_OVERLAP·CLIP은 반드시 0건으로 고치고**, INDENT는 계층 표현인지 판단해 채택·보류한다([`visual-patterns.md`](reference/visual-patterns.md) §8).
 11. **독립 리뷰 (2라운드)** — 작성 에이전트가 아닌 **진입 런타임의 새 서브에이전트**에 [`review.md`](reference/review.md) §3 프롬프트 템플릿을 그대로 넘겨 10개 항목 평가를 받는다(⛔ 매번 프롬프트를 새로 짓지 않는다). **호출 1건당 10분 상한**을 프롬프트에 명시하고, 초과하면 1줄 기록 후 스킵·재시도 없음. 수정 후 §4를 덧붙여 1회 더 요청(총 2라운드), 충돌은 `design-rules.md` 우선으로 메인이 판단해 반영. push 전에 완료.
 12. **적재 (레포 모드만)** — 캐시에서 `git add -A` → 커밋 → `git push`. **push 성공까지 확인**하고, 실패하면 중단·보고(로컬에만 커밋 남기지 않음). 로컬 모드는 건너뛴다.
-13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault `CLAUDE.md` 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. ([`operations.md`](reference/operations.md) §옵시디언 지식베이스 적재)
+13. **옵시디언 Ingest (topic 모드만)** — vault가 설정/응답됐으면 원본→`sources/`, 정리→`wiki/<도메인>/`, `[[링크]]`, `index.md`·`log.md` 갱신. **vault 규칙 파일(`CLAUDE.md`·`GEMINI.md`·`AGENTS.md`·`README.md`) 스키마 우선.** `obsidian: false`·미설정·비-topic이면 건너뛴다. ([`operations.md`](reference/operations.md) §옵시디언 지식베이스 적재)
 14. **오픈** — 생성/보강된 HTML을 `open`으로 실행. 대상(레포/로컬)·경로·장 수·**보강/신규 여부**·**옵시디언 적재 여부**를 한 줄로 보고.
 
 ## 절대 규칙

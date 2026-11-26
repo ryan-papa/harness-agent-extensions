@@ -278,6 +278,30 @@ class ValidatePluginTest(unittest.TestCase):
         self.assertTrue(res.ok, res.errors)
         self.assertEqual(res.warnings, [])
 
+    def test_three_runtime_adapters_and_fallbacks(self) -> None:
+        skills_dir = REPO_ROOT / "rp-plugins" / "skills"
+        for review_rel in ("rp-deck/reference/review.md", "rp-post/reference/review.md"):
+            text = (skills_dir / review_rel).read_text(encoding="utf-8")
+            for token in ("Antigravity", "invoke_subagent", 'TypeName: "self"', "send_message", "swarm"):
+                self.assertIn(token, text, f"{review_rel} missing {token}")
+
+        post_skill = (skills_dir / "rp-post" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("Antigravity", post_skill)
+        self.assertIn("search_web", post_skill)
+
+        yt_deck = (skills_dir / "rp-youtube-deck" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("search_web", yt_deck)
+
+        deck_skill = (skills_dir / "rp-deck" / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("search_web", deck_skill)
+        self.assertIn("GEMINI.md", deck_skill)
+
+        recap_meta, recap_body = vp.parse_frontmatter(
+            (skills_dir / "rp-codebase-recap" / "SKILL.md").read_text(encoding="utf-8")
+        )
+        self.assertNotIn("Agent", recap_meta.get("allowed-tools", []))
+        self.assertIn("/tmp", recap_body)
+
 
 if __name__ == "__main__":
     unittest.main()

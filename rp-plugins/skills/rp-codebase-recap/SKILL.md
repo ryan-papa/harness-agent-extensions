@@ -11,7 +11,6 @@ allowed-tools:
   - Read
   - Glob
   - Grep
-  - Agent
 ---
 
 # rp-codebase-recap
@@ -39,7 +38,7 @@ allowed-tools:
 ## 절차 (5-pass — 얕게 끝내면 실패)
 
 ### Pass 0 — 대상 확보
-- **로컬**: 경로 확정(이름만 오면 탐색). **GitHub**: scratchpad에 `git clone --filter=blob:none` 후 분석, 종료 시 삭제. 비공개는 `gh`/git 인증 의존, 실패 시 사유 보고·중단.
+- **로컬**: 경로 확정(이름만 오면 탐색). **GitHub**: 스크래치패드(미제공 환경은 시스템 임시 디렉터리 `/tmp` 등 레포 외부 경로)에 `git clone --filter=blob:none` 후 분석, 종료 시 삭제. 비공개는 `gh`/git 인증 의존, 실패 시 사유 보고·중단.
 - **비 git**: git 기반 섹션 스킵·명시, 코드 정독은 계속.
 
 ### Pass 1 — 광역 스캔 (지형 파악)
