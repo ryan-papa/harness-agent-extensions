@@ -1,6 +1,6 @@
 # harness-agent-extensions
 
-하네스용 Claude Code 플러그인·스킬 모음.
+하네스용 **Claude Code · Antigravity** 멀티 런타임 플러그인·스킬 모음. (런타임 중립 규칙으로 Codex CLI에서도 동일 스킬 문서를 공유한다.)
 
 ## 플러그인
 
@@ -8,7 +8,7 @@
 
 `rp-*` 스킬 모음.
 
-현재 버전 `0.28.0` ([CHANGELOG](CHANGELOG.md)).
+현재 버전 `0.35.0` ([CHANGELOG](CHANGELOG.md)).
 
 | 스킬 | 역할 |
 |------|------|
@@ -21,12 +21,37 @@
 
 ## 설치
 
-이 레포는 Claude Code 플러그인 마켓플레이스다.
+### Claude Code
 
-```
+이 레포는 Claude Code 플러그인 마켓플레이스를 제공한다.
+
+```bash
 /plugin marketplace add ryan-papa/harness-agent-extensions
 /plugin install rp-plugins@harness-agent-extensions
 ```
+
+### Antigravity (CLI · App · IDE)
+
+`rp-plugins/.antigravity-plugin/plugin.json`을 통해 Antigravity 네이티브 플러그인으로 설치한다. (단일 `rp-plugins/skills/` 소스를 Claude Code와 공유하며, 병행 사용 시 `.rp-deck.json`·`~/.rp-deck/repos/`·`~/.rp-youtube/` 설정과 캐시를 그대로 공유한다.)
+
+```bash
+git clone https://github.com/ryan-papa/harness-agent-extensions.git
+cd harness-agent-extensions
+
+# 플러그인 매니페스트 및 6개 스킬 검증 (0 errors · 0 warnings)
+agy plugin validate --strict ./rp-plugins
+
+# 로컬 Antigravity 전역 설치 (~/.gemini/config/plugins/rp-plugins)
+agy plugin install ./rp-plugins
+
+# 설치 및 6개 스킬 활성화 확인
+agy plugin list
+```
+
+- **업데이트(재설치):** `agy plugin install`은 복사형 설치이므로 레포 갱신 후 `git pull && agy plugin install ./rp-plugins`를 다시 실행한다. 기존 설치 충돌 시 `agy plugin uninstall rp-plugins && agy plugin install ./rp-plugins`로 재설치한다.
+- **비활성화 / 재활성화:** `agy plugin disable rp-plugins`로 즉시 끌 수 있다. 비활성화 상태는 `~/.gemini/config/config.json`에 영속 저장되어 재설치 후에도 유지되므로, 다시 켤 때는 `agy plugin enable rp-plugins`를 명시 실행한다.
+
+### 호출 예시
 
 설치 후 스킬로 호출한다.
 
@@ -77,42 +102,59 @@
 
 주제 조사(topic) 모드는 조사 원본·정리 노트를 옵시디언 vault(설정 시)에도 남긴다. vault를 한 번도 등록하지 않았으면 최초 1회만 물어보고, 필요 없다고 답하면 `"obsidian": false`로 기록해 **이후 실행에서 다시 묻지 않는다**.
 
+## 기술 스택 · 검증
+
+- **스킬·매니페스트:** Markdown (`SKILL.md` · `reference/*.md`), JSON (`.claude-plugin/plugin.json`, `.antigravity-plugin/plugin.json`)
+- **스크립트·검증:** Python 3 stdlib only (`rp-deck`·`rp-youtube*` 유틸 및 `scripts/validate_plugin.py` 정적 검증기, `unittest`), GitHub Actions CI, `yt-dlp` (`rp-youtube` 계열 자동 venv 설치)
+
+```bash
+python3 scripts/validate_plugin.py
+python3 -m unittest discover -s tests -v
+```
+
 ## 구조
 
 ```
 harness-agent-extensions/
-├── .claude-plugin/marketplace.json   # 마켓플레이스 선언
+├── .claude-plugin/marketplace.json          # Claude Code 마켓플레이스 선언
+├── scripts/
+│   └── validate_plugin.py                   # 멀티 프로바이더 정적 검증 (stdlib only)
+├── tests/
+│   └── test_validate_plugin.py              # 정적 검증·회귀 단위 테스트
 └── rp-plugins/
-    ├── .claude-plugin/plugin.json
+    ├── .claude-plugin/plugin.json           # Claude Code 플러그인 매니페스트
+    ├── .antigravity-plugin/plugin.json      # Antigravity 네이티브 플러그인 매니페스트
     └── skills/
         ├── rp-deck/
-        │   ├── SKILL.md              # 스킬 정의
+        │   ├── SKILL.md                     # 스킬 정의 (≤24KB 로드 한도 준수)
         │   ├── reference/
-        │   │   ├── template.html       # 디자인·컴포넌트 SSOT
-        │   │   ├── design-rules.md     # 독자 기준·구조·전달력·토스 톤 규칙
-        │   │   ├── visual-patterns.md  # 주제 → 시각 표현 매핑 SSOT
-        │   │   └── review.md           # 독립 서브에이전트 리뷰 프로토콜
+        │   │   ├── template.html            # 디자인·컴포넌트 SSOT
+        │   │   ├── design-rules.md          # 독자 기준·구조·전달력·토스 톤 규칙
+        │   │   ├── visual-patterns.md       # 주제 → 시각 표현 매핑 SSOT
+        │   │   ├── operations.md            # 타깃 레포·홈 버튼·옵시디언·보강/신규·삭제 SSOT
+        │   │   └── review.md                # 독립 서브에이전트 리뷰 프로토콜 (3런타임)
         │   └── scripts/
-        │       ├── update_index.py    # 인덱스 생성 (stdlib only)
-        │       └── delete_deck.py     # 덱 삭제 + 인덱스 재생성 (stdlib only)
+        │       ├── update_index.py          # 인덱스 생성 (stdlib only)
+        │       ├── delete_deck.py           # 덱 삭제 + 인덱스 재생성 (stdlib only)
+        │       └── lint_svg.py              # 인라인 SVG 좌표 린트 (stdlib only)
         ├── rp-codebase-recap/
-        │   └── SKILL.md              # 스킬 정의 (단일 파일)
+        │   └── SKILL.md                     # 스킬 정의 (단일 파일)
         ├── rp-youtube/
-        │   ├── SKILL.md              # 스킬 정의
+        │   ├── SKILL.md                     # 스킬 정의
         │   └── scripts/
-        │       └── fetch_transcript.py  # 메타+자막 → 타임스탬프 전사본 (stdlib + yt-dlp)
+        │       └── fetch_transcript.py      # 메타+자막 → 타임스탬프 전사본 (stdlib + yt-dlp)
         ├── rp-youtube-channel/
-        │   ├── SKILL.md              # 스킬 정의
+        │   ├── SKILL.md                     # 스킬 정의
         │   └── scripts/
-        │       └── list_channel.py      # 채널 목록 → 상태 대조 → 순차 프로브 (stdlib + yt-dlp)
+        │       └── list_channel.py          # 채널 목록 → 상태 대조 → 순차 프로브 (stdlib + yt-dlp)
         ├── rp-youtube-deck/
-        │   └── SKILL.md              # 오케스트레이터 (rp-youtube → 원천 검증 → rp-deck)
+        │   └── SKILL.md                     # 오케스트레이터 (rp-youtube → 원천 검증 → rp-deck)
         └── rp-post/
-            ├── SKILL.md              # 스킬 정의
+            ├── SKILL.md                     # 스킬 정의
             └── reference/
-                ├── patterns.md       # 실측 통계 SSOT + 데이터 갱신 절차
-                ├── archetypes.md     # 아키타입 공식 (바이럴 A1~A6 · 사내 K1~K3)
-                ├── checklist.md      # 초안 검증 (바이럴용·사내용 각 7항목)
-                ├── platforms.md      # 플랫폼 프로파일·변환 규칙
-                └── review.md         # 독립 서브에이전트 리뷰 프로토콜
+                ├── patterns.md              # 실측 통계 SSOT + 데이터 갱신 절차
+                ├── archetypes.md            # 아키타입 공식 (바이럴 A1~A6 · 사내 K1~K3)
+                ├── checklist.md             # 초안 검증 (바이럴용·사내용 각 7항목)
+                ├── platforms.md             # 플랫폼 프로파일·변환 규칙
+                └── review.md                # 독립 서브에이전트 리뷰 프로토콜 (3런타임)
 ```

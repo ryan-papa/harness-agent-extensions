@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.35.0] - 2026-11-26
+
+### Added
+- **Antigravity 네이티브 플러그인 지원** (`rp-plugins/.antigravity-plugin/plugin.json`) — `.claude-plugin/plugin.json`과 공존하는 멀티 프로바이더 구조로 단일 `rp-plugins/skills/` 소스를 공유한다. `agy plugin validate --strict ./rp-plugins` 0 errors·0 warnings 통과 및 `agy plugin install ./rp-plugins` 전역 설치를 지원한다
+- **플러그인 정적 검증기·단위 테스트·CI 연동** (`scripts/validate_plugin.py`, `tests/test_validate_plugin.py`, `.github/workflows/ci.yml`) — Antigravity `schemas/v1/plugin.json` 허용 키·`displayName`·`suggestedPrompts`·HTTPS 검사, `.claude-plugin`/`.antigravity-plugin`/`CHANGELOG.md`/`README.md` 4자 버전 정합, 멀티라인 YAML frontmatter 파싱, `SKILL.md` 본문 UTF-8 24,000 bytes 상한(22,000 bytes 경고), `rp-plugins/` 내부 상대 링크·경로 탈출 차단, 배포 산출물 로컬 경로·고신뢰 시크릿 정적 스캔을 자동화한다
+
+### Changed
+- **`rp-deck` 운영 규칙 분리 및 교차 참조 동기화** (`rp-deck/SKILL.md`, `rp-deck/reference/operations.md`, `rp-youtube-deck/SKILL.md`) — 기존 `rp-deck/SKILL.md` 본문이 28,959 bytes로 Antigravity 24,000 bytes 로드 상한을 초과하던 문제를 해소하기 위해 부가 운영 5섹션(타깃 레포·홈 버튼·옵시디언·보강/신규·삭제 모드)을 `reference/operations.md`로 무손실 분리해 본문을 20KB 이하로 축소하고, `rp-deck` 및 `rp-youtube-deck`의 필수 Read 시점과 교차 참조를 동기화했다
+- **3런타임(Claude Code · Codex CLI · Antigravity) 리뷰어·도구 호환 보완** (`rp-deck`, `rp-post`, `rp-youtube-deck`, `rp-codebase-recap`, `review.md` 2종) — 독립 리뷰 호출 표에 Antigravity(`invoke_subagent`, `TypeName: "self"`, `send_message` 텍스트 회신 필수, `swarm`·이전 리뷰어 재호출·리뷰어 결과 파일/artifact 생성 금지) 및 3런타임 교차 금지 추가. `rp-post` 메인의 입력 임시 파일 허용 경계를 분리하고, `deep-research` 미설치 시 웹 검색 fallback, vault 규칙 파일 다중 표기(`CLAUDE.md`/`GEMINI.md`/`AGENTS.md`/`README.md`), 스크래치 임시 경로 fallback을 보완하며 `rp-codebase-recap` 미사용 `allowed-tools: Agent`를 제거했다
+- **`README.md`·`.gitignore` 정비** — 현재 버전(`0.35.0`)·Antigravity 설치/업데이트/비활성화 복구 가이드·디렉터리 구조 트리를 현행화하고 `.gitignore`에 `worktrees/`를 추가했다
+
 ## [0.34.0] - 2026-11-02
 
 ### Removed
