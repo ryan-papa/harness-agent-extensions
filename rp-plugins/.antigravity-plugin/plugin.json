@@ -1,0 +1,24 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "rp-plugins",
+  "displayName": "RP Harness Extensions",
+  "version": "0.35.0",
+  "description": "토스 스타일 HTML 장표(rp-deck), 실측 바이럴·사내 글 초안(rp-post), 코드베이스 심층 발굴(rp-codebase-recap), 유튜브 분석·검증 장표(rp-youtube*) 6개 스킬 모음.",
+  "suggestedPrompts": [
+    "방금 끝낸 작업 내용을 토스 스타일 HTML 장표(/rp-deck)로 만들어줘",
+    "방금 끝낸 작업 결과를 공유 글 초안(/rp-post)으로 써줘",
+    "유튜브 영상 링크를 분석·원천 검증해서 장표(/rp-youtube-deck)로 만들어줘"
+  ],
+  "author": {
+    "name": "Rapa-Space"
+  },
+  "repository": "https://github.com/ryan-papa/harness-agent-extensions",
+  "keywords": [
+    "harness",
+    "deck",
+    "post",
+    "codebase-recap",
+    "youtube",
+    "skills"
+  ]
+}
